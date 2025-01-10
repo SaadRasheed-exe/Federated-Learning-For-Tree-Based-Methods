@@ -1,0 +1,17 @@
+flask
+joblib
+lightgbm
+matplotlib
+numpy
+openpyxl
+pandas
+pillow
+requests
+scikit-learn
+scikit-survival
+scipy
+tqdm
+xgboost
+charset_normalizer
+cryptography
+flask-talisman
