@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyclic XGBoost: Training Parameters</title>
+    <link rel="stylesheet" href="/static/css/cyclic_xgboost.css">
+    <script src="/static/js/cyclic_xgboost.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Cyclic XGBoost: Training Parameters</h1>
+
+        <form id="cyclic-xgboost-form" action="/results" method="post">
+            <!-- Aggregation Type -->
+            <div class="form-group">
+                <label for="aggregation-type">Aggregation Type:</label>
+                <select id="aggregation-type" name="aggregation_type" required>
+                    <option value="">Select...</option>
+                    <option value="Weighted">Weighted</option>
+                    <option value="Unweighted">Unweighted</option>
+                </select>
+            </div>
+
+            <!-- Aggregation-specific Parameters -->
+            <div id="aggregation-specific-parameters" class="hidden">
+                <!-- This section is dynamically updated -->
+            </div>
+
+            <!-- General Parameters -->
+            <div class="form-group">
+                <label for="learning-rate">Learning Rate:</label>
+                <input type="number" id="learning-rate" name="learning_rate" step="0.01" value="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="max-depth">Max Depth:</label>
+                <input type="number" id="max-depth" name="max_depth" min="1" value="6" required>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+                <a class="go-back" href="/">Go Back</a>
+                <button class="continue" type="submit">Start Training</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

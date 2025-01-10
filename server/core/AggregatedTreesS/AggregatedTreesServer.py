@@ -17,9 +17,6 @@ class AggregatedTreesServer(BaseServer):
             self.encryption_manager
         )
         self.client_manager.init_encryption('agg')
-    
-    def send_code_dir(self, code_dir: str):
-        self.client_manager.send_code_dir(code_dir)
 
     def fit(
             self,

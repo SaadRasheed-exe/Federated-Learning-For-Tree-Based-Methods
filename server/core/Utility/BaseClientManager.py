@@ -160,10 +160,13 @@ class BaseClientManager:
         """
         return self.encryption_manager.get_client_public_key(client_id)
     
-    def send_code_dir(self, code_dir: str):
+    def send_code_dir(self, code_dir: str, to: str = None):
         """
         Send the code directory to all active clients.
         Args:
             code_dir (str): The path to the code directory.
         """
-        self._execute_in_threads(1, self._upload_to_client, code_dir)
+        if to:
+            self._upload_to_client(to, code_dir)
+        else:
+            self._execute_in_threads(1, self._upload_to_client, code_dir)

@@ -19,7 +19,7 @@ class BaseServer(ABC):
 
             self.clients[state] = ip
 
-        self.client_manager: BaseClientManager = None
+        self.client_manager = None
         self.encryption_manager = ServerEncryptionManager()
     
     def _get_client_url(self, state='', ip=''):
@@ -60,16 +60,16 @@ class BaseServer(ABC):
             statuses[state] = self._check_client_status(state)
         return statuses
 
+    
+    def send_code_dir(self, code_dir: str, to: str = None):
+        self.client_manager.send_code_dir(code_dir, to)
+
     @abstractmethod
     def fit(self):
         pass
 
     @abstractmethod
     def evaluate(self):
-        pass
-
-    @abstractmethod
-    def send_code_dir(self):
         pass
 
     

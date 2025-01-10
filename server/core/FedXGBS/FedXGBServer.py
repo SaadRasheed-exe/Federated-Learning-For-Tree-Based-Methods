@@ -18,9 +18,6 @@ class FedXGBServer(BaseServer):
         self.client_manager.init_clients(self.features)
         self.client_manager.init_masks()
         self.estimators = []
-    
-    def send_code_dir(self, code_dir: str):
-        self.client_manager.send_code_dir(code_dir)
 
     def initialize(self, avg_splits: int = 2, importance_method: Literal['gain', 'xgb'] = 'gain'):
         self.avg_splits = avg_splits

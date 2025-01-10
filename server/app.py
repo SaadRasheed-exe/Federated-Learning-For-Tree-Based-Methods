@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request
-from core import FedXGBServer, AggregatedTreesServer
+from core import FedXGBServer, AggregatedTreesServer, CyclicXGBServer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
@@ -7,6 +7,7 @@ from lightgbm import LGBMClassifier
 import pandas as pd
 import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from configparser import ConfigParser
 
 app = Flask(__name__)
 server = None
@@ -36,6 +37,10 @@ def shortlist_clients():
         server = AggregatedTreesServer(client_json_path)
     elif method == "FedXGBoost":
         server = FedXGBServer(client_json_path)
+    elif method == "Cyclic XGBoost":
+        server = CyclicXGBServer(client_json_path)
+    else:
+        return "Invalid method selected", 400
     
     
     if not os.path.exists(f'static/res/{disease_map[disease]}'):
@@ -79,20 +84,15 @@ def results():
         model = request.form.get("model")
         params = {key: request.form[key] for key in request.form if key not in ["aggregation_type", "model"]}
 
+        weightage = None
         if aggregation_type == "Weighted":
             weightage = {state: (stat['diagnosed']['n_samples'] + stat['normal']['n_samples']) for state, stat in datastats.items() if state in selected_states}
-        else:
-            weightage = None
+        
         
         params = server.parse_params(params)
         model = eval(model)(**params)
         agg_model = server.fit(model, weightage, selected_states)
         scores = server.evaluate(agg_model)
-        # scores_df = pd.DataFrame(scores, index=[0])
-        # scores_df.columns = [col.capitalize() for col in scores_df.columns]
-        # scores_df = scores_df.round(4)
-        # scores_df.index = ['Training']
-        # scores_html = scores_df.to_html(index=True, classes='table table-striped table-bordered')
     
     elif method == "FedXGBoost":
         params = {key: request.form[key] for key in request.form}
@@ -112,6 +112,32 @@ def results():
         )
         scores = server.evaluate()
         X_test = X_test[agg_model.feature_names]
+    
+    elif method == "Cyclic XGBoost":
+        aggregation_type = request.form.get("aggregation_type")
+        params = {key: request.form[key] for key in request.form if key not in ["aggregation_type", "total_boosting_rounds", "boosting_rounds_per_node"]}
+
+        weightage = None
+        if aggregation_type == "Weighted":
+            total_trees = int(request.form.get("total_boosting_rounds"))
+            weightage = {}
+            total = sum([stat['diagnosed']['n_samples'] + stat['normal']['n_samples'] for state, stat in datastats.items() if state in selected_states])
+            for state in selected_states:
+                weightage[state] = int(total_trees * ((datastats[state]['diagnosed']['n_samples'] + datastats[state]['normal']['n_samples']) / total))
+        
+        elif aggregation_type == "Unweighted":
+            num_rounds = int(request.form.get("boosting_rounds_per_node"))
+            weightage = {state: num_rounds for state in selected_states}
+        
+        else:
+            raise ValueError("Invalid aggregation type")
+
+        params = server.parse_params(params)
+        model = XGBClassifier(**params)
+
+        agg_model = server.fit(model, weightage=weightage)
+        scores = server.evaluate(agg_model)
+        X_test = X_test[agg_model.feature_names_in_]
 
     
     scores_df = pd.DataFrame(scores, index=[0])
@@ -128,8 +154,7 @@ def results():
         test_scores['F1'] = f1_score(y_test, y_pred)
     
     scores_df.loc['Test', :] = test_scores
-    scores_html = scores_df.to_html(index=True, classes='table table-striped table-bordered')
-
+    scores_html = scores_df.to_html(index=True, classes='table table-striped table-bordered', float_format='%.2f')
 
     # Render the results page
     return render_template(
