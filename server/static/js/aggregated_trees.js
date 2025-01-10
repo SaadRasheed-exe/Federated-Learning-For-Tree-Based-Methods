@@ -71,4 +71,14 @@ document.addEventListener("DOMContentLoaded", () => {
             modelParametersContainer.classList.add("hidden");
         }
     });
+
+    const form = document.getElementById("training-parameters-form");
+    const loadingSpinner = document.getElementById("loading-spinner");
+
+    form.addEventListener("submit", function (event) {
+        // Show loading spinner when the form is submitted
+        loadingSpinner.style.visibility = 'visible';
+    });
 });
+
+
