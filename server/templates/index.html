@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask App</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/scripts.js" defer></script>
+</head>
+<body>
+    <h1>Welcome to My Flask App</h1>
+    <form action="/shortlist-clients" method="post" id="selection-form">
+        <div class="button-container" id="method-buttons">
+            <input type="hidden" name="method" id="method-input">
+            <button type="button" id="aggregated-trees">Aggregated Trees</button>
+            <button type="button" id="cyclic-xgboost">Cyclic XGBoost</button>
+            <button type="button" id="fed-xgboost">FedXGBoost</button>
+        </div>
+        <div class="button-container" id="disease-buttons">
+            <input type="hidden" name="disease" id="disease-input">
+            <button type="button" id="diabetes">Diabetes</button>
+            <button type="button" id="hypertension">Hypertension</button>
+        </div>
+        <div class="continue-container">
+            <button id="continue-btn" disabled>Continue</button>
+        </div>
+    </form>
+</body>
+</html>

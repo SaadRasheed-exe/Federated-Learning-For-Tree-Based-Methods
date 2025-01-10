@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aggregated Trees: Training Parameters</title>
+    <link rel="stylesheet" href="/static/css/aggregated_trees.css">
+    <script src="/static/js/aggregated_trees.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Aggregated Trees: Training Parameters</h1>
+
+        <form id="training-parameters-form" action="/results" method="post">
+            <!-- Aggregation Type -->
+            <div class="form-group">
+                <label for="aggregation-type">Aggregation Type:</label>
+                <select id="aggregation-type" name="aggregation_type" required>
+                    <option value="">Select...</option>
+                    <option value="Weighted">Weighted</option>
+                    <option value="Unweighted">Unweighted</option>
+                </select>
+            </div>
+
+            <!-- Model -->
+            <div class="form-group">
+                <label for="model">Model:</label>
+                <select id="model" name="model" required>
+                    <option value="">Select...</option>
+                    <option value="DecisionTreeClassifier">Decision Tree</option>
+                    <option value="RandomForestClassifier">Random Forest</option>
+                    <option value="XGBClassifier">XGBClassifier</option>
+                    <option value="LGBMClassifier">LGBMClassifier</option>
+                </select>
+            </div>
+
+            <!-- Model-specific parameters -->
+            <div id="model-parameters-container" class="hidden">
+                <!-- This section is dynamically updated -->
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+                <a class="go-back" href="/">Go Back</a>
+                <button class="continue" type="submit">Start Training</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statewise Data Stats</title>
+    <link rel="stylesheet" href="/static/css/shortlist_clients.css">
+</head>
+<body>
+    <div class="container">
+        <div class="clients-grid">
+            <h2>Statewise Data Stats</h2>
+            <div class="grid">
+                {% for state, stats in datastats.items() %}
+                    <div class="client-card" data-state="{{ state }}">
+                        <h3>{{ state }}</h3>
+                        <div class="client-info">
+                            <p><strong>Diagnosed</strong></p>
+                            <p>Samples: {{ stats.diagnosed.n_samples }}</p>
+                            <p>Features: {{ stats.diagnosed.n_features }}</p>
+                        </div>
+                        <div class="client-info">
+                            <p><strong>Normal</strong></p>
+                            <p>Samples: {{ stats.normal.n_samples }}</p>
+                            <p>Features: {{ stats.normal.n_features }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="actions">
+            <a href="/" class="go-back">Go Back</a>
+            <button id="continue-btn" class="continue" disabled>Continue</button>
+        </div>
+    </div>
+
+    <script src="/static/js/shortlist_clients.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FedXGBoost: Training Parameters</title>
+    <link rel="stylesheet" href="/static/css/fedxgboost.css">
+    <script src="/static/js/fedxgboost.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>FedXGBoost: Training Parameters</h1>
+
+        <form id="training-parameters-form" action="/results" method="post">
+            <!-- FedXGBoost Parameters -->
+            <div class="form-grid">
+                <!-- Avg Splits -->
+                <div class="form-group">
+                    <label for="avg-splits">Average Splits:</label>
+                    <input type="number" id="avg-splits" name="avg_splits" min="1" value="2" required>
+                </div>
+
+                <!-- Features per Booster -->
+                <div class="form-group">
+                    <label for="features-per-booster">Features per Booster:</label>
+                    <input type="number" id="features-per-booster" name="features_per_booster" min="1" value="10" required>
+                </div>
+
+                <!-- Boosting Rounds -->
+                <div class="form-group">
+                    <label for="boosting-rounds">Boosting Rounds:</label>
+                    <input type="number" id="boosting-rounds" name="boosting_rounds" min="1" value="100" required>
+                </div>
+
+                <!-- Importance Rounds -->
+                <div class="form-group">
+                    <label for="importance-rounds">Importance Rounds:</label>
+                    <input type="number" id="importance-rounds" name="importance_rounds" min="1" value="50" required>
+                </div>
+
+                <!-- Depth -->
+                <div class="form-group">
+                    <label for="depth">Depth:</label>
+                    <input type="number" id="depth" name="depth" min="1" value="5" required>
+                </div>
+
+                <!-- Learning Rate -->
+                <div class="form-group">
+                    <label for="learning-rate">Learning Rate:</label>
+                    <input type="number" id="learning-rate" name="learning_rate" step="0.01" value="0.3" required>
+                </div>
+
+                <!-- Min Leaf -->
+                <div class="form-group">
+                    <label for="min-leaf">Min Leaf:</label>
+                    <input type="number" id="min-leaf" name="min_leaf" min="1" value="5" required>
+                </div>
+
+                <!-- Lambda -->
+                <div class="form-group">
+                    <label for="lambda">Lambda:</label>
+                    <input type="number" id="lambda" name="lambda_" step="0.01" value="1.5" required>
+                </div>
+
+                <!-- Gamma -->
+                <div class="form-group">
+                    <label for="gamma">Gamma:</label>
+                    <input type="number" id="gamma" name="gamma" step="0.01" value="1" required>
+                </div>
+
+                <!-- Min Child Weight -->
+                <div class="form-group">
+                    <label for="min-child-weight">Min Child Weight:</label>
+                    <input type="number" id="min-child-weight" name="min_child_weight" min="1" value="1" required>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+                <a class="go-back" href="/">Go Back</a>
+                <button class="continue" type="submit">Start Training</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
