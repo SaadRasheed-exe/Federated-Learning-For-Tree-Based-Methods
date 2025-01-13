@@ -1,8 +1,6 @@
 from flask import Blueprint, jsonify, request
 from ..CyclicXGBC import CyclicXGBClient
 from xgboost import XGBClassifier
-import requests
-import pickle
 
 cyclic_blueprint = Blueprint('cyclic', __name__)
 client = CyclicXGBClient()

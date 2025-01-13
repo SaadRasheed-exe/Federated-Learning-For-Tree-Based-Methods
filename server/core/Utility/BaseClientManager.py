@@ -32,7 +32,7 @@ class BaseClientManager:
         Returns:
             response (dict): The response from the client (if successful).
         """
-        url = 'http://' + self.clients.get(client_id) + f':{self.CLIENT_PORT}'
+        url = 'https://' + self.clients.get(client_id) + f':{self.CLIENT_PORT}'
         if not url:
             raise ValueError(f"Client ID {client_id} not found.")
         
@@ -47,7 +47,7 @@ class BaseClientManager:
 
         try:
             # Sending request to the client's API endpoint
-            response = requests.post(f"{url}/{endpoint}", json=data)
+            response = requests.post(f"{url}/{endpoint}", json=data, verify=False)
             
             # Check if the response is successful
             if response.status_code == 200:
@@ -95,7 +95,7 @@ class BaseClientManager:
     
     # Function to upload a file to a specific subdirectory on the client
     def _upload_to_client(self, client_id, path, their_subdir=''):
-        url = 'http://' + self.clients.get(client_id) + f':{self.CLIENT_PORT}'
+        url = 'https://' + self.clients.get(client_id) + f':{self.CLIENT_PORT}'
         if not os.path.exists(path):
             raise FileNotFoundError(f"The specified path does not exist: {path}")
         
@@ -115,7 +115,7 @@ class BaseClientManager:
         # Open the file and upload it
         with open(upload_path, 'rb') as f:
             files = {'file': (filename, f)}
-            response = requests.post(f"{url}/upload", files=files, data=data)
+            response = requests.post(f"{url}/upload", files=files, data=data, verify=False)
         
         # Clean up the temporary .zip file if a folder was compressed
         if os.path.isdir(path):

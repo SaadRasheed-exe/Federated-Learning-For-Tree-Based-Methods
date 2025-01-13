@@ -24,15 +24,15 @@ class BaseServer(ABC):
     
     def _get_client_url(self, state='', ip=''):
         if state:
-            return f'http://{self.clients[state]}:{self.client_manager.CLIENT_PORT}'
+            return f'https://{self.clients[state]}:{self.client_manager.CLIENT_PORT}'
         elif ip:
-            return f'http://{ip}:{self.client_manager.CLIENT_PORT}'
+            return f'https://{ip}:{self.client_manager.CLIENT_PORT}'
         else:
             return None
     
     def _get_client_data_stats(self, state):
         client_url = self._get_client_url(state=state)
-        response = requests.get(f"{client_url}/send-stats")
+        response = requests.get(f"{client_url}/send-stats", verify=False)
         return response.json()
         
     def get_data_stats(self, participants=None):
@@ -49,7 +49,7 @@ class BaseServer(ABC):
             raise ValueError('Either state or ip should be provided.')
         try:
             client_url = self._get_client_url(state=state)
-            response = requests.get(f"{client_url}/status", timeout=5)
+            response = requests.get(f"{client_url}/status", timeout=5, verify=False)
             return response.status_code
         except Exception as e:
             return {'message': f'Error: {e}'}

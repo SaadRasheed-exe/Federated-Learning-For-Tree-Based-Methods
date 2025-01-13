@@ -33,7 +33,7 @@ class FedXGBClientManager(BaseClientManager):
         initializer = [0]
         for client_id in self.active_clients:
             try:
-                client_list = [('http://' + url + f':{self.CLIENT_PORT}') for c, url in self.clients.items() if c in self.active_clients]
+                client_list = [('https://' + url + f':{self.CLIENT_PORT}') for c, url in self.clients.items() if c in self.active_clients]
                 data = {
                     'initializer': initializer,
                     'client_list': client_list,

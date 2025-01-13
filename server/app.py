@@ -7,7 +7,6 @@ from lightgbm import LGBMClassifier
 import pandas as pd
 import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from configparser import ConfigParser
 
 app = Flask(__name__)
 server = None
@@ -163,4 +162,8 @@ def results():
     )
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=7224, debug=True)
+    app.run(
+        host='0.0.0.0', 
+        port=7224,
+        debug=True,
+    )

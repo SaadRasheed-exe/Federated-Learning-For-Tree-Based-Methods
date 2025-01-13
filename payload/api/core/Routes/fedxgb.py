@@ -77,7 +77,7 @@ def create_mask():
         data = {'data': {'update': True, 'delta': delta.tolist()}}
     
     try:
-        response = requests.post(f'{next_client}/fedxgb/create-mask', json=data)
+        response = requests.post(f'{next_client}/fedxgb/create-mask', json=data, verify=False)
         if response.status_code != 200:
             raise Exception("Error in creating masks")
     except Exception as e:
