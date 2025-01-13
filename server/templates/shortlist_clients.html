@@ -10,9 +10,15 @@
     <div class="container">
         <div class="clients-grid">
             <h2>Statewise Data Stats</h2>
+            <!-- Add Select All Option -->
+            <div class="select-all">
+                <input type="checkbox" id="select-all" checked />
+                <label for="select-all">Select All</label>
+            </div>
             <div class="grid">
                 {% for state, stats in datastats.items() %}
-                    <div class="client-card" data-state="{{ state }}">
+                    <!-- Add 'selected' class by default -->
+                    <div class="client-card selected" data-state="{{ state }}">
                         <h3>{{ state }}</h3>
                         <div class="client-info">
                             <p><strong>Diagnosed</strong></p>
@@ -31,7 +37,7 @@
 
         <div class="actions">
             <a href="/" class="go-back">Go Back</a>
-            <button id="continue-btn" class="continue" disabled>Continue</button>
+            <button id="continue-btn" class="continue">Continue</button>
         </div>
     </div>
 

@@ -44,6 +44,14 @@ document.addEventListener("DOMContentLoaded", () => {
         updateContinueButtonState();
     });
 
+    const form = document.getElementById("selection-form");
+    const loadingSpinner = document.getElementById("loading-spinner");
+
+    form.addEventListener("submit", function (event) {
+        // Show loading spinner when the form is submitted
+        loadingSpinner.style.visibility = 'visible';
+    });
+
     // Update Continue button state based on selections
     function updateContinueButtonState() {
         continueButton.disabled = !(selectedMethodButton && selectedDiseaseButton);

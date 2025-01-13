@@ -28,4 +28,12 @@ document.addEventListener("DOMContentLoaded", () => {
             aggregationParametersContainer.classList.add("hidden");
         }
     });
+
+    const form = document.getElementById("cyclic-xgboost-form");
+    const loadingSpinner = document.getElementById("loading-spinner");
+
+    form.addEventListener("submit", function (event) {
+        // Show loading spinner when the form is submitted
+        loadingSpinner.style.visibility = 'visible';
+    });
 });
