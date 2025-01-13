@@ -15,23 +15,29 @@
                 <input type="checkbox" id="select-all" checked />
                 <label for="select-all">Select All</label>
             </div>
-            <div class="grid">
-                {% for state, stats in datastats.items() %}
-                    <!-- Add 'selected' class by default -->
-                    <div class="client-card selected" data-state="{{ state }}">
-                        <h3>{{ state }}</h3>
-                        <div class="client-info">
-                            <p><strong>Diagnosed</strong></p>
-                            <p>Samples: {{ stats.diagnosed.n_samples }}</p>
-                            <p>Features: {{ stats.diagnosed.n_features }}</p>
+            <div class="grid {% if not datastats %}no-clients{% endif %}">
+                {% if datastats %}
+                    {% for state, stats in datastats.items() %}
+                        <!-- Add 'selected' class by default -->
+                        <div class="client-card selected" data-state="{{ state }}">
+                            <h3>{{ state }}</h3>
+                            <div class="client-info">
+                                <p><strong>Diagnosed</strong></p>
+                                <p>Samples: {{ stats.diagnosed.n_samples }}</p>
+                                <p>Features: {{ stats.diagnosed.n_features }}</p>
+                            </div>
+                            <div class="client-info">
+                                <p><strong>Normal</strong></p>
+                                <p>Samples: {{ stats.normal.n_samples }}</p>
+                                <p>Features: {{ stats.normal.n_features }}</p>
+                            </div>
                         </div>
-                        <div class="client-info">
-                            <p><strong>Normal</strong></p>
-                            <p>Samples: {{ stats.normal.n_samples }}</p>
-                            <p>Features: {{ stats.normal.n_features }}</p>
-                        </div>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                {% else %}
+                <div class="no-clients-wrapper">
+                    <p class="no-clients-message">There are no available clients.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
 

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify, redirect
 from core import FedXGBServer, AggregatedTreesServer, CyclicXGBServer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -7,6 +7,10 @@ from lightgbm import LGBMClassifier
 import pandas as pd
 import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import threading
+import warnings
+warnings.filterwarnings("ignore")
+import ipdb
 
 app = Flask(__name__)
 server = None
@@ -14,6 +18,9 @@ disease = None
 method = None
 selected_states = None
 datastats = None
+scores = None
+agg_model = None
+progress = None
 
 disease_map = {
     'Diabetes': 'Diabetes_E11',
@@ -35,7 +42,8 @@ def shortlist_clients():
     if method == "Aggregated Trees":
         server = AggregatedTreesServer(client_json_path)
     elif method == "FedXGBoost":
-        server = FedXGBServer(client_json_path)
+        if server is None or server.__class__.__name__ != "FedXGBServer":
+            server = FedXGBServer(client_json_path)
     elif method == "Cyclic XGBoost":
         server = CyclicXGBServer(client_json_path)
     else:
@@ -66,17 +74,27 @@ def training_parameters():
         return render_template("fedxgboost.html")
     else:
         return "Invalid method selected", 400
-
-@app.route("/results", methods=["POST"])
-def results():
-    global datastats, selected_states, method
     
-    scores_html = pd.DataFrame().to_html(index=True, classes='table table-striped table-bordered')
-    testdata = pd.read_csv(f'static/res/{disease_map[disease]}/testdata.csv')
-    X_test = testdata.drop(columns=['is_diagnosed'])
-    y_test = testdata['is_diagnosed']
-    agg_model = None
 
+@app.route("/progress", methods=["GET"])
+def get_progress():
+    return jsonify(progress)
+
+def train_with_progress(generator, total_rounds):
+    global progress, agg_model
+    progress["total"] = total_rounds  # Assume total rounds are known
+    try:
+        while True:
+            progress["round"] = next(generator)
+    except StopIteration as e:
+        progress["round"] = progress["total"]  # Ensure completion
+        progress["completed"] = True
+        agg_model = e.value
+        return e.value
+
+@app.route("/training", methods=["POST"])
+def training():
+    global datastats, selected_states, method, agg_model, progress
     if method == "Aggregated Trees":
         # Retrieve form data
         aggregation_type = request.form.get("aggregation_type")
@@ -91,26 +109,29 @@ def results():
         params = server.parse_params(params)
         model = eval(model)(**params)
         agg_model = server.fit(model, weightage, selected_states)
-        scores = server.evaluate(agg_model)
     
     elif method == "FedXGBoost":
         params = {key: request.form[key] for key in request.form}
         params = server.parse_params(params)
         server.initialize(params['avg_splits'])
-        agg_model = server.fit(
+        generator = server.fit_generator(
             resume=False,
-            min_child_weight = params['min_child_weight'],
-            depth = params['depth'],
-            min_leaf = params['min_leaf'],
-            learning_rate = params['learning_rate'],
-            boosting_rounds = params['boosting_rounds'],
-            lambda_ = params['lambda_'],
-            gamma = params['gamma'],
-            features_per_booster = params['features_per_booster'],
-            importance_rounds = params['importance_rounds']
+            min_child_weight=params['min_child_weight'],
+            depth=params['depth'],
+            min_leaf=params['min_leaf'],
+            learning_rate=params['learning_rate'],
+            boosting_rounds=params['boosting_rounds'],
+            lambda_=params['lambda_'],
+            gamma=params['gamma'],
+            features_per_booster=params['features_per_booster'],
+            importance_rounds=params['importance_rounds']
         )
-        scores = server.evaluate()
-        X_test = X_test[agg_model.feature_names]
+
+        progress = {"round": 0, "total": params["boosting_rounds"], "completed": False}
+        thread = threading.Thread(target=train_with_progress, args=(generator, params['boosting_rounds']))
+        thread.start()
+
+        return render_template("training_progress.html")
     
     elif method == "Cyclic XGBoost":
         aggregation_type = request.form.get("aggregation_type")
@@ -135,13 +156,22 @@ def results():
         model = XGBClassifier(**params)
 
         agg_model = server.fit(model, weightage=weightage)
-        scores = server.evaluate(agg_model)
-        X_test = X_test[agg_model.feature_names_in_]
 
-    
-    scores_df = pd.DataFrame(scores, index=[0])
+    return redirect("/results")
+
+@app.route("/results", methods=["GET", "POST"])
+def results():
+    global datastats, selected_states, method, train_scores, agg_model, progress
+
+    testdata = pd.read_csv(f'static/res/{disease_map[disease]}/testdata.csv')
+    X_test = testdata.drop(columns=['is_diagnosed'])
+    y_test = testdata['is_diagnosed']
+
+    train_scores = server.evaluate(agg_model)
+
+    X_test = X_test[agg_model.feature_names_in_]
+    scores_df = pd.DataFrame(train_scores, index=[0])
     scores_df.columns = [col.capitalize() for col in scores_df.columns]
-    scores_df = scores_df.round(4)
     scores_df.index = ['Train']
 
     test_scores = {}
@@ -154,6 +184,7 @@ def results():
     
     scores_df.loc['Test', :] = test_scores
     scores_html = scores_df.to_html(index=True, classes='table table-striped table-bordered', float_format='%.2f')
+    progress = None
 
     # Render the results page
     return render_template(

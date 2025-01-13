@@ -14,7 +14,7 @@ class FedXGBoostEnsemble:
         self.estimators = estimators
         self.base_y = base_y
         self.learning_rate = learning_rate
-        self.feature_names = feature_names
+        self.feature_names_in_ = feature_names
     
     @staticmethod
     def sigmoid(x):

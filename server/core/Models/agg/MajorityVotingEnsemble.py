@@ -63,3 +63,8 @@ class MajorityVotingEnsemble:
             return model.booster_.feature_name()
         else:
             raise ValueError(f'{type(model)} models are not supported')
+
+    @property
+    def feature_names_in_(self):
+        for _, model in self.models.items():
+            return MajorityVotingEnsemble._get_model_feature_names(model)
