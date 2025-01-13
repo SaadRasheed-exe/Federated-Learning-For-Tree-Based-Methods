@@ -1,9 +1,24 @@
+/* Container for the entire content */
 .container {
     width: 50%;
     margin: 0 auto;
     text-align: center;
 }
 
+/* Container for the video */
+.video-container {
+    text-align: center;
+    margin-bottom: 20px; /* Space between video and progress bar */
+}
+
+/* Styling the video */
+#training-gif {
+    width: 80%; /* Adjust this to fit the video size as needed */
+    max-width: 600px; /* Limit the maximum width */
+    height: auto; /* Maintain the aspect ratio */
+}
+
+/* Styling for the progress bar container */
 .progress-bar-container {
     width: 100%;
     background-color: #f3f3f3;
@@ -15,6 +30,7 @@
     position: relative;
 }
 
+/* Styling for the progress bar itself */
 .progress-bar {
     height: 100%;
     width: 0%;
@@ -22,11 +38,13 @@
     transition: width 0.5s ease-in-out;
 }
 
+/* Styling for the progress text */
 #progress-text {
     font-size: 1.2em;
     margin-top: 10px;
 }
 
+/* Styling for the completion message */
 #completion-message {
     font-size: 1.2em;
     color: #4caf50;

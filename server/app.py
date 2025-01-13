@@ -15,8 +15,7 @@ disease = None
 method = None
 selected_states = None
 datastats = None
-
-progress = {"round": 0, "total": 0, "completed": False}
+progress = None
 
 disease_map = {
     'Diabetes': 'Diabetes_E11',
@@ -38,7 +37,9 @@ def shortlist_clients():
     if method == "Aggregated Trees":
         server = AggregatedTreesServer(client_json_path)
     elif method == "FedXGBoost":
-        server = FedXGBServer(client_json_path)
+        if server is None or server.__class__.__name__ != "FedXGBServer":
+            server = FedXGBServer(client_json_path)
+
     elif method == "Cyclic XGBoost":
         server = CyclicXGBServer(client_json_path)
     else:
@@ -88,7 +89,7 @@ def train_with_progress(generator, total_rounds):
 
 @app.route("/results", methods=["POST"])
 def results():
-    global datastats, selected_states, method
+    global datastats, selected_states, method, progress
     
     scores_html = pd.DataFrame().to_html(index=True, classes='table table-striped table-bordered')
     testdata = pd.read_csv(f'static/res/{disease_map[disease]}/testdata.csv')
@@ -128,6 +129,8 @@ def results():
             features_per_booster=params['features_per_booster'],
             importance_rounds=params['importance_rounds']
         )
+
+        progress = {"round": 0, "total": 0, "completed": False}
 
         thread = threading.Thread(target=train_with_progress, args=(generator, params['boosting_rounds']))
         thread.start()
@@ -177,6 +180,7 @@ def results():
     scores_df.loc['Test', :] = test_scores
     scores_html = scores_df.to_html(index=True, classes='table table-striped table-bordered', float_format='%.2f')
 
+    progress = None
     # Render the results page
     return render_template(
         "results.html",
