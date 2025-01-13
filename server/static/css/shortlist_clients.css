@@ -126,3 +126,23 @@ body {
     cursor: not-allowed;
     box-shadow: none;
 }
+
+.grid.no-clients {
+    display: flex; /* Switch to flex for the message */
+    flex-direction: column; /* Center content vertically */
+    align-items: center; /* Center content horizontally */
+    justify-content: center; /* Center content vertically */
+    min-height: 150px; /* Maintain space for message */
+}
+
+.no-clients-wrapper {
+    text-align: center; /* Center the text horizontally */
+    width: 100%; /* Full width for alignment */
+}
+
+.no-clients-message {
+    color: red;
+    font-size: 1.2em;
+    font-weight: bold;
+    margin: 0;
+}
