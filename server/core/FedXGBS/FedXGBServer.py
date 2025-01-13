@@ -45,9 +45,8 @@ class FedXGBServer(BaseServer):
         self.trainer.make_splits(avg_splits)
         self.client_manager.set_base_y(base_y)
         self.client_manager.set_feature_splits(self.trainer.feature_splits)
-    
 
-    def fit(
+    def fit_generator(
         self,
         resume = False, 
         min_child_weight = 1.0, 
@@ -58,10 +57,9 @@ class FedXGBServer(BaseServer):
         lambda_ = 1.5, 
         gamma = 1,
         features_per_booster = 10, 
-        importance_rounds = 20,
-        verbose=True
+        importance_rounds = 20
     ):
-
+        
         self.client_manager.set_learning_rate(learning_rate)
         if not resume:
             self.estimators = []
@@ -84,9 +82,8 @@ class FedXGBServer(BaseServer):
         else:
             feature_importance = None
 
-        iterator = tqdm(range(boosting_rounds)) if verbose else range(boosting_rounds)
+        for round_num in range(boosting_rounds):
 
-        for round_num in iterator:
             new_tree = self.trainer.boost(
                 round_num, 
                 self.client_manager,
@@ -103,6 +100,8 @@ class FedXGBServer(BaseServer):
                 self.trainer.make_splits(self.avg_splits)
                 feature_importance = None
                 self.client_manager.set_feature_splits(self.trainer.feature_splits)
+
+            yield round_num
         
         return FedXGBoostEnsemble(
             self.estimators,
@@ -110,6 +109,37 @@ class FedXGBServer(BaseServer):
             learning_rate,
             self.features
         )
+    
+    def fit(
+        self,
+        resume = False, 
+        min_child_weight = 1.0, 
+        depth = 5, 
+        min_leaf = 5,
+        learning_rate = 0.3, 
+        boosting_rounds = 5, 
+        lambda_ = 1.5, 
+        gamma = 1,
+        features_per_booster = 10, 
+        importance_rounds = 20
+    ):
+        fit_gen = self.fit_generator(
+                resume=resume, 
+                min_child_weight=min_child_weight, 
+                depth=depth, 
+                min_leaf=min_leaf,
+                learning_rate=learning_rate, 
+                boosting_rounds=boosting_rounds, 
+                lambda_=lambda_, 
+                gamma=gamma,
+                features_per_booster=features_per_booster, 
+                importance_rounds=importance_rounds
+            )
+        try:
+            while True:
+                next(fit_gen)
+        except StopIteration as e:
+            return e.value
 
     def evaluate(self):
         counts = self.client_manager.evaluate()
