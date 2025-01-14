@@ -88,11 +88,19 @@ def train_with_progress(generator, total_rounds):
     try:
         while True:
             progress["round"] = next(generator)
+            if progress["interrupted"]:
+                break
     except StopIteration as e:
         progress["round"] = progress["total"]  # Ensure completion
         progress["completed"] = True
         agg_model = e.value
         return e.value
+    
+@app.route("/interrupt-training", methods=["POST"])
+def interrupt_training():
+    global progress
+    progress["interrupted"] = True
+    return redirect("/")
 
 @app.route("/training", methods=["POST"])
 def training():
@@ -129,7 +137,7 @@ def training():
             importance_rounds=params['importance_rounds']
         )
 
-        progress = {"round": 0, "total": params["boosting_rounds"], "completed": False}
+        progress = {"round": 0, "total": params["boosting_rounds"], "completed": False, "interrupted": False}
         thread = threading.Thread(target=train_with_progress, args=(generator, params['boosting_rounds']))
         thread.start()
 

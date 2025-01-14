@@ -11,20 +11,22 @@
     <div class="container">
         <h1>Training In Progress</h1>
  
-        <!-- Video placed above the progress bar -->
+        <!-- GIF placed above the progress bar -->
         <div class="video-container">
-            <video id="training-gif" loop autoplay muted>
-                <source src="/static/res/fedxgb_gif.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
+            <img id="training-gif" src="/static/res/animations/fedxgb2.gif" alt="Training Animation">
         </div>
- 
+
         <!-- Progress bar section -->
         <div class="progress-bar-container">
             <div id="progress-bar" class="progress-bar"></div>
         </div>
         <p id="progress-text">Starting...</p>
         <p id="completion-message"></p>
+
+        <!-- Cancel button -->
+        <form action="/interrupt-training" method="POST" style="margin-top: 20px;">
+            <button type="submit" class="cancel-button">Cancel Training</button>
+        </form>
     </div>
 </body>
 </html>
