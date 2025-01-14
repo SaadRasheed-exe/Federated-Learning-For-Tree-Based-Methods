@@ -8,6 +8,7 @@ import pandas as pd
 import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import threading
+import shap
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -20,6 +21,8 @@ datastats = None
 scores = None
 agg_model = None
 progress = None
+X_test = None
+y_test = None
 
 DISEASE_MAPPING = {
     'Diabetes': 'Diabetes_E11',
@@ -160,7 +163,7 @@ def training():
 
 @app.route("/results", methods=["GET", "POST"])
 def results():
-    global datastats, selected_states, method, train_scores, agg_model, progress
+    global datastats, selected_states, method, train_scores, agg_model, progress, X_test, y_test
 
     testdata = pd.read_csv(f'static/res/{DISEASE_MAPPING[disease]}/testdata.csv')
     X_test = testdata.drop(columns=['is_diagnosed'])
@@ -185,11 +188,41 @@ def results():
     scores_html = scores_df.to_html(index=True, classes='table table-striped table-bordered', float_format='%.2f')
     progress = None
 
+    # TODO: add explanation button on results page which redirects to /explain
+    return redirect("/explain")
+
     # Render the results page
     return render_template(
         "results.html",
         table=scores_html
     )
+
+
+@app.route("/explain", methods=["GET"])
+def explain():
+    global agg_model, X_test, method
+
+    X_sample = X_test.sample(100, random_state=42)
+
+    if method == "Aggregated Trees":
+        shap_values = agg_model.shap_values(X_sample)
+        shap.summary_plot(shap_values, X_sample, show=True)
+    
+    elif method == "Cyclic XGBoost":
+        explainer = shap.TreeExplainer(agg_model)
+        shap_values = explainer.shap_values(X_sample)
+        shap.summary_plot(shap_values, X_sample, show=True)
+    
+    elif method == "FedXGBoost":
+        # TODO: plot feature importance
+        print(agg_model.feature_importance)
+        pass
+    
+    else:
+        raise ValueError("Invalid method")
+
+    return render_template("explain.html")
+
 
 if __name__ == "__main__":
     app.run(

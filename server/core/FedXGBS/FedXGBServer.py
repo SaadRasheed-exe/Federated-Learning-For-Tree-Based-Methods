@@ -106,7 +106,8 @@ class FedXGBServer(BaseServer):
             self.estimators,
             self.trainer.base_y,
             learning_rate,
-            self.features
+            self.features,
+            self.trainer.feature_importance
         )
     
     def fit(

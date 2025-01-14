@@ -33,7 +33,8 @@ class AggregatedTreesServer(BaseServer):
         if weightage:
             model_weightage = {k: weightage[k] for k in participants}
         
-        client_models = self.client_manager.train_clients(model, time)
+        feature_names = self.client_manager.get_feature_names()
+        client_models = self.client_manager.train_clients(model, time, feature_names)
         combined_model = MajorityVotingEnsemble(client_models, model_weightage) if weightage else MajorityVotingEnsemble(client_models)
         return combined_model
     

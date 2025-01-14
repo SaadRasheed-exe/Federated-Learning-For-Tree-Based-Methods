@@ -5,10 +5,14 @@ import numpy as np
 
 class AggregatedTreesClient(BaseClient):
 
-    def train(self, model, time):
-        model = train_model(model, time)
+    def train(self, model, time, feature_names):
+        model = train_model(model, time, feature_names)
         return model
     
+    def get_feature_names(self):
+        X, _ = get_data()
+        return X.columns.tolist()
+
     def evaluate(self, model: MajorityVotingEnsemble):
         '''
         Evaluate the model on the client's data.

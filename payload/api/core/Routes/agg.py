@@ -18,13 +18,19 @@ def train():
     data = request.json['data']
     serialized_model = data['model']
     serialized_time = data['time']
+    feature_names = data['feature_names']
 
     model = pickle.loads(bytes.fromhex(serialized_model))
     time = datetime.strptime(serialized_time, '%Y-%m-%d %H:%M:%S')
     
-    trained_model = client.train(model, time)
+    trained_model = client.train(model, time, feature_names)
     serialized_model = pickle.dumps(trained_model).hex()
     return jsonify({'model': serialized_model})
+
+@agg_blueprint.route('/get_feature_names', methods=['POST'])
+def get_feature_names():
+    feature_names = client.get_feature_names()
+    return jsonify({'feature_names': feature_names})
 
 @agg_blueprint.route('/evaluate', methods=['POST'])
 def evaluate():

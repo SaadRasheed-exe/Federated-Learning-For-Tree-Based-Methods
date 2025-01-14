@@ -7,7 +7,7 @@ import os, shutil
 import pandas as pd
 
 
-def train_model(model, time):
+def train_model(model, time, feature_names):
     start_time = datetime.now()
     config_file_path = './config.ini'
     config = ConfigParser()
@@ -22,7 +22,7 @@ def train_model(model, time):
     classifier = TrainClassifier(experiment_path, config_file_path)
     utils.configure_logging(experiment_path, printing_required=True)
 
-    model = classifier.train_classifier(model)
+    model = classifier.train_classifier(model, feature_names)
 
     end_time = datetime.now()
 
@@ -51,5 +51,8 @@ def get_data():
 
     X = pd.concat([x_train, x_test], axis=0)
     y = pd.concat([y_train, y_test], axis=0)
+
+    if os.path.exists(experiment_path):
+        shutil.rmtree('models')
 
     return X, y

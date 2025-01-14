@@ -21,7 +21,7 @@ class TrainClassifier:
         self.imputation_required = eval(self.config.get('FEATURES_IMPUTATION', 'imputation_required'))
 
     
-    def train_classifier(self, model):
+    def train_classifier(self, model, feature_names):
         
         logging.info('-'*60)
         logging.info('Training Classifier')
@@ -31,7 +31,8 @@ class TrainClassifier:
             x_train, x_test, x_val, y_train, y_test,  y_val = self.process.get_data(is_survival=False)
         else:
             x_train, x_test, y_train, y_test = self.process.get_data(is_survival=False)
-            
+        
+        x_train = x_train[feature_names]
         models = [(model, 'model')]
         
         

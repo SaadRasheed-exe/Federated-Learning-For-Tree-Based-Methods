@@ -9,15 +9,29 @@ from ..Models.agg import MajorityVotingEnsemble
 from ..Utility import BaseClientManager
 
 class AggregatedTreesClientManager(BaseClientManager):
-    def train_clients(self, model: Any, time: datetime):
+
+    def get_feature_names(self):
+        """
+        Get the feature names of the client's data.
+        Returns:
+            feature_names (list): A list of feature names.
+        """
+        # Select a random client to get the feature names
+        for client_id in self.active_clients:
+            feature_names = self._communicate(client_id, 'agg/get_feature_names', serialize=False)
+            if feature_names is not None:
+                return feature_names.get('feature_names')
+
+    def train_clients(self, model: Any, time: datetime, feature_names: list):
         """
         Train all active clients using their local data.
         Args:
+            model (Any): The model to train.
             time (str): The current time for logging purposes.
         """
         serialized_model = pickle.dumps(model).hex()
         serialized_time = time.strftime('%Y-%m-%d %H:%M:%S')
-        data = {'time': serialized_time, 'model': serialized_model}
+        data = {'time': serialized_time, 'model': serialized_model, 'feature_names': feature_names}
 
         client_models = {}
         # decoded_time = time.strftime('%Y-%m-%d %H:%M:%S')
