@@ -141,7 +141,7 @@ class FedXGBServer(BaseServer):
         except StopIteration as e:
             return e.value
 
-    def evaluate(self):
+    def evaluate(self, *args):
         counts = self.client_manager.evaluate()
         tp = counts['tp']
         tn = counts['tn']

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 from core import FedXGBServer, AggregatedTreesServer, CyclicXGBServer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -8,6 +8,9 @@ import pandas as pd
 import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import threading
+import warnings
+warnings.filterwarnings("ignore")
+import ipdb
 
 app = Flask(__name__)
 server = None
@@ -15,6 +18,8 @@ disease = None
 method = None
 selected_states = None
 datastats = None
+scores = None
+agg_model = None
 progress = None
 
 disease_map = {
@@ -39,7 +44,6 @@ def shortlist_clients():
     elif method == "FedXGBoost":
         if server is None or server.__class__.__name__ != "FedXGBServer":
             server = FedXGBServer(client_json_path)
-
     elif method == "Cyclic XGBoost":
         server = CyclicXGBServer(client_json_path)
     else:
@@ -77,7 +81,7 @@ def get_progress():
     return jsonify(progress)
 
 def train_with_progress(generator, total_rounds):
-    global progress
+    global progress, agg_model
     progress["total"] = total_rounds  # Assume total rounds are known
     try:
         while True:
@@ -85,18 +89,12 @@ def train_with_progress(generator, total_rounds):
     except StopIteration as e:
         progress["round"] = progress["total"]  # Ensure completion
         progress["completed"] = True
+        agg_model = e.value
         return e.value
 
-@app.route("/results", methods=["POST"])
-def results():
-    global datastats, selected_states, method, progress
-    
-    scores_html = pd.DataFrame().to_html(index=True, classes='table table-striped table-bordered')
-    testdata = pd.read_csv(f'static/res/{disease_map[disease]}/testdata.csv')
-    X_test = testdata.drop(columns=['is_diagnosed'])
-    y_test = testdata['is_diagnosed']
-    agg_model = None
-
+@app.route("/training", methods=["POST"])
+def training():
+    global datastats, selected_states, method, agg_model, progress
     if method == "Aggregated Trees":
         # Retrieve form data
         aggregation_type = request.form.get("aggregation_type")
@@ -111,7 +109,6 @@ def results():
         params = server.parse_params(params)
         model = eval(model)(**params)
         agg_model = server.fit(model, weightage, selected_states)
-        scores = server.evaluate(agg_model)
     
     elif method == "FedXGBoost":
         params = {key: request.form[key] for key in request.form}
@@ -130,8 +127,7 @@ def results():
             importance_rounds=params['importance_rounds']
         )
 
-        progress = {"round": 0, "total": 0, "completed": False}
-
+        progress = {"round": 0, "total": params["boosting_rounds"], "completed": False}
         thread = threading.Thread(target=train_with_progress, args=(generator, params['boosting_rounds']))
         thread.start()
 
@@ -160,13 +156,22 @@ def results():
         model = XGBClassifier(**params)
 
         agg_model = server.fit(model, weightage=weightage)
-        scores = server.evaluate(agg_model)
-        X_test = X_test[agg_model.feature_names_in_]
 
-    
-    scores_df = pd.DataFrame(scores, index=[0])
+    return redirect("/results")
+
+@app.route("/results", methods=["GET", "POST"])
+def results():
+    global datastats, selected_states, method, train_scores, agg_model, progress
+
+    testdata = pd.read_csv(f'static/res/{disease_map[disease]}/testdata.csv')
+    X_test = testdata.drop(columns=['is_diagnosed'])
+    y_test = testdata['is_diagnosed']
+
+    train_scores = server.evaluate(agg_model)
+
+    X_test = X_test[agg_model.feature_names_in_]
+    scores_df = pd.DataFrame(train_scores, index=[0])
     scores_df.columns = [col.capitalize() for col in scores_df.columns]
-    scores_df = scores_df.round(4)
     scores_df.index = ['Train']
 
     test_scores = {}
@@ -179,6 +184,7 @@ def results():
     
     scores_df.loc['Test', :] = test_scores
     scores_html = scores_df.to_html(index=True, classes='table table-striped table-bordered', float_format='%.2f')
+    progress = None
 
     progress = None
     # Render the results page
