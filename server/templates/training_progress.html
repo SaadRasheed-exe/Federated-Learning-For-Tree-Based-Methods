@@ -25,6 +25,11 @@
         </div>
         <p id="progress-text">Starting...</p>
         <p id="completion-message"></p>
+
+        <!-- Cancel button -->
+        <form action="/interrupt-training" method="POST" style="margin-top: 20px;">
+            <button type="submit" class="cancel-button">Cancel Training</button>
+        </form>
     </div>
 </body>
 </html>
