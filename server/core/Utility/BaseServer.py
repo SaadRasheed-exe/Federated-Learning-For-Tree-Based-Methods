@@ -1,9 +1,8 @@
 import requests
 import json
 from abc import ABC, abstractmethod
-from .ServerEncryptionManager import ServerEncryptionManager
+from .Serializer import Serializer
 from .BaseClientManager import BaseClientManager
-# from .models import MajorityVotingEnsemble
 
 class BaseServer(ABC):
 
@@ -19,8 +18,8 @@ class BaseServer(ABC):
 
             self.clients[state] = ip
 
-        self.client_manager = None
-        self.encryption_manager = ServerEncryptionManager()
+        self.serializer = Serializer()
+        self.client_manager = BaseClientManager(self.clients, self.serializer)
     
     def _get_client_url(self, state='', ip=''):
         if state:

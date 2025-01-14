@@ -10,9 +10,8 @@ class FedXGBServer(BaseServer):
 
     def __init__(self, clients_json_path: str):
         super().__init__(clients_json_path)
-        self.client_manager = FedXGBClientManager(self.clients, self.encryption_manager)
+        self.client_manager = FedXGBClientManager(self.clients, self.serializer)
 
-        self.client_manager.init_encryption('fedxgb')
         self.features = self.client_manager.fetch_feature_names()
         self.num_features = len(self.features)
         self.client_manager.init_clients(self.features)

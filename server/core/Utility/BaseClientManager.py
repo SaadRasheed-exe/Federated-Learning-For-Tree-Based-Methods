@@ -1,28 +1,27 @@
-from .ServerEncryptionManager import ServerEncryptionManager
+from .Serializer import Serializer
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os, shutil
 import requests
 from typing import Dict, Any, Callable
 
 
-
 class BaseClientManager:
 
     CLIENT_PORT = 7223
 
-    def __init__(self, clients: Dict, encryption_manager: 'ServerEncryptionManager'):
+    def __init__(self, clients: Dict, serializer: 'Serializer'):
         """
         Initializes the ClientManager instance.
         Args:
             clients (dict): A dictionary with client IDs as keys and their base URLs as values.
-            encryption_manager (ServerEncryptionManager): The encryption manager instance to handle encryption/decryption.
+            serializer (Serializer): The serialization manager instance to handle serialization/deserialization.
         """
         self.clients = clients  # {client_id: client_url}
-        self.encryption_manager = encryption_manager
+        self.serializer = serializer
         self.active_clients = list(self.clients.keys())  # List of active clients
         self.client_data = {}
     
-    def _communicate(self, client_id: str, endpoint: str, data: Any = None, encrypt: bool = True) -> Dict:
+    def _communicate(self, client_id: str, endpoint: str, data: Any = None, serialize: bool = True) -> Dict:
         """
         Communicate with a client.
         Args:
@@ -36,12 +35,9 @@ class BaseClientManager:
         if not url:
             raise ValueError(f"Client ID {client_id} not found.")
         
-        # Encrypt the data before sending (if data exists and encryption is enabled)
-        if data and encrypt:
-            data = {'encrypted': self.encryption_manager.encrypt_message(
-                self.encryption_manager.get_client_public_key(client_id),
-                data
-            ).hex()}
+        # Serialize the data before sending (if data exists and serialization is enabled)
+        if data and serialize:
+            data = {'serialized': self.serializer.serialize_message(data).hex()}
         else:
             data = {'data': data}
 
@@ -51,10 +47,10 @@ class BaseClientManager:
             
             # Check if the response is successful
             if response.status_code == 200:
-                encrypted = response.json().get('encrypted')
-                if encrypted:
-                    # Decrypt the received message
-                    response = self.encryption_manager.decrypt_message(bytes.fromhex(encrypted))
+                serialized = response.json().get('serialized')
+                if serialized:
+                    # Deserialize the received message
+                    response = self.serializer.deserialize_message(bytes.fromhex(serialized))
                     return response
                 else:
                     return response.json()
@@ -133,32 +129,11 @@ class BaseClientManager:
             self.active_clients.remove(client_id)
             print(f"Client {client_id} has been removed from active clients.")
     
-    def init_encryption(self, endpoint: str):
-        """
-        Initialize encryption for all active clients.
-        """
-        server_public_key = self.encryption_manager.get_public_key()
-        data = {'server_public_key': server_public_key.hex()}
-        result = self._execute_in_threads(4, self._communicate, f'{endpoint}/init-encryption', data, encrypt=False)
-        for client_id, response in result.items():
-            if response:
-                self.encryption_manager.add_client_public_key(client_id, bytes.fromhex(response.get('client_public_key')))
-    
     def manage_active_clients(self):
         """
         Periodically check the status of active clients, remove any that have failed.
         """
-        self._execute_in_threads(4, self._communicate, 'status', encrypt=False)
-
-    def get_client_public_key(self, client_id: str):
-        """
-        Retrieve the public key of a client by their client ID.
-        Args:
-            client_id (str): The ID of the client.
-        Returns:
-            public_key (bytes): The public key in PEM format.
-        """
-        return self.encryption_manager.get_client_public_key(client_id)
+        self._execute_in_threads(4, self._communicate, 'status', serialize=False)
     
     def send_code_dir(self, code_dir: str, to: str = None):
         """

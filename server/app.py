@@ -10,7 +10,6 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import threading
 import warnings
 warnings.filterwarnings("ignore")
-import ipdb
 
 app = Flask(__name__)
 server = None
@@ -22,7 +21,7 @@ scores = None
 agg_model = None
 progress = None
 
-disease_map = {
+DISEASE_MAPPING = {
     'Diabetes': 'Diabetes_E11',
     'Hypertension': 'Hypertension_I10'
 }
@@ -49,11 +48,10 @@ def shortlist_clients():
     else:
         return "Invalid method selected", 400
     
+    if not os.path.exists(f'static/res/{DISEASE_MAPPING[disease]}'):
+        raise FileNotFoundError(f"Directory not found: {DISEASE_MAPPING[disease]}")
     
-    if not os.path.exists(f'static/res/{disease_map[disease]}'):
-        raise FileNotFoundError(f"Directory not found: {disease_map[disease]}")
-    
-    server.send_code_dir(f'static/res/{disease_map[disease]}/config.ini')
+    server.send_code_dir(f'static/res/{DISEASE_MAPPING[disease]}/config.ini')
     datastats = server.get_data_stats()
 
     # Pass selected values to the result page
@@ -64,6 +62,7 @@ def training_parameters():
     global selected_states, method
     states = request.args.get("states")
     selected_states = states.split(',') if states else []
+    server.client_manager.active_clients = selected_states
         
     # Render the appropriate page based on the method
     if method == "Aggregated Trees":
@@ -163,7 +162,7 @@ def training():
 def results():
     global datastats, selected_states, method, train_scores, agg_model, progress
 
-    testdata = pd.read_csv(f'static/res/{disease_map[disease]}/testdata.csv')
+    testdata = pd.read_csv(f'static/res/{DISEASE_MAPPING[disease]}/testdata.csv')
     X_test = testdata.drop(columns=['is_diagnosed'])
     y_test = testdata['is_diagnosed']
 

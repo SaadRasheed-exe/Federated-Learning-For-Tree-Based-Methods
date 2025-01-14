@@ -114,7 +114,7 @@ class Histogram:
        
         id = tuple(features_subset)
  
-        if compute_regions and id not in self._regions_cache:
+        if compute_regions and (id not in self._regions_cache):
             regions = self._get_region_indices(features_subset)
             self._regions_cache[id] = regions
         elif id in self._regions_cache:

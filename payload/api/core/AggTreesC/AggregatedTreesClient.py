@@ -1,4 +1,3 @@
-# from .EncryptionManager import EncryptionManager
 from .client_code import train_model, get_data
 from ..Utility import BaseClient
 from ..Models import MajorityVotingEnsemble

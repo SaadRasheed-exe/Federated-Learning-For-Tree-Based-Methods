@@ -21,7 +21,7 @@ class AggregatedTreesClientManager(BaseClientManager):
 
         client_models = {}
         # decoded_time = time.strftime('%Y-%m-%d %H:%M:%S')
-        responses = self._execute_in_threads(4, self._communicate, 'agg/train', data, encrypt=False)
+        responses = self._execute_in_threads(4, self._communicate, 'agg/train', data, serialize=False)
         for client_id, response in responses.items():
             if response:
                 client_models[client_id] = pickle.loads(bytes.fromhex(response.get('model')))
@@ -37,5 +37,5 @@ class AggregatedTreesClientManager(BaseClientManager):
         """
         serialized_model = pickle.dumps(model.serialize()).hex()
         data = {'model': serialized_model}
-        scores = self._execute_in_threads(4, self._communicate, 'agg/evaluate', data, encrypt=False)
+        scores = self._execute_in_threads(4, self._communicate, 'agg/evaluate', data, serialize=False)
         return scores

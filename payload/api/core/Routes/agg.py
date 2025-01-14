@@ -13,13 +13,6 @@ agg_blueprint = Blueprint('agg', __name__)
 client = AggregatedTreesClient()
 
 
-@agg_blueprint.route('/init-encryption', methods=['POST'])
-def set_server_public_key():
-    data = request.json['data']
-    server_public_key = data['server_public_key']
-    client_public_key = client.init_encryption(bytes.fromhex(server_public_key))
-    return jsonify({'client_public_key': client_public_key.hex()})
-
 @agg_blueprint.route('/train', methods=['POST'])
 def train():
     data = request.json['data']

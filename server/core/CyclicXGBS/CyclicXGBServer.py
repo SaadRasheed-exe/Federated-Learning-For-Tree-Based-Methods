@@ -11,9 +11,8 @@ class CyclicXGBServer(BaseServer):
         super().__init__(clients_json_path)
         self.client_manager = CyclicXGBClientManager(
             self.clients,
-            self.encryption_manager
+            self.serializer
         )
-        self.client_manager.init_encryption('cyclic')
 
     def fit(
             self, 

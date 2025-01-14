@@ -10,7 +10,7 @@ class FedXGBClientManager(BaseClientManager):
             feature_names (list): A list of feature names from the clients.
         """
         for client_id in self.active_clients:
-            response = self._communicate(client_id, 'fedxgb/get-feature-names', encrypt=False)
+            response = self._communicate(client_id, 'fedxgb/get-feature-names', serialize=False)
             if response:
                 return response
             else:
@@ -38,7 +38,7 @@ class FedXGBClientManager(BaseClientManager):
                     'initializer': initializer,
                     'client_list': client_list,
                 }
-                response = self._communicate(client_id, 'fedxgb/create-mask', data, encrypt=False)
+                response = self._communicate(client_id, 'fedxgb/create-mask', data, serialize=False)
                 if response:
                     break
                 else:
@@ -161,7 +161,7 @@ class FedXGBClientManager(BaseClientManager):
             estimators (int): The number of estimators to set.
         """
         data = {'estimators': estimators}
-        result = self._execute_in_threads(4, self._communicate, 'fedxgb/set-estimators', data, encrypt=False)
+        result = self._execute_in_threads(4, self._communicate, 'fedxgb/set-estimators', data, serialize=False)
         for client_id, response in result.items():
             if not response:
                 self._handle_client_failure(client_id)

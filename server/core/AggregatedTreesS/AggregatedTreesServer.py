@@ -14,9 +14,8 @@ class AggregatedTreesServer(BaseServer):
         super().__init__(clients_json_path)
         self.client_manager = AggregatedTreesClientManager(
             self.clients,
-            self.encryption_manager
+            self.serializer
         )
-        self.client_manager.init_encryption('agg')
 
     def fit(
             self,
