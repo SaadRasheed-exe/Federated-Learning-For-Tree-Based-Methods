@@ -7,6 +7,7 @@ from lightgbm import LGBMClassifier
 import pandas as pd
 import os
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import matplotlib.pyplot as plt
 import threading
 import shap
 import warnings
@@ -196,9 +197,7 @@ def results():
     scores_html = scores_df.to_html(index=True, classes='table table-striped table-bordered', float_format='%.2f')
     progress = None
 
-    # TODO: add explanation button on results page which redirects to /explain
-    return redirect("/explain")
-
+    # return redirect("/explain")
     # Render the results page
     return render_template(
         "results.html",
@@ -212,24 +211,56 @@ def explain():
 
     X_sample = X_test.sample(100, random_state=42)
 
+    plot_path = "static/feature_importance.png"
+
     if method == "Aggregated Trees":
         shap_values = agg_model.shap_values(X_sample)
-        shap.summary_plot(shap_values, X_sample, show=True)
-    
+        plt.figure()
+        shap.summary_plot(shap_values, X_sample, show=False)  # Set show=False to prevent automatic display
+        plt.savefig(plot_path, bbox_inches="tight")
+        plt.close()
+
     elif method == "Cyclic XGBoost":
         explainer = shap.TreeExplainer(agg_model)
         shap_values = explainer.shap_values(X_sample)
-        shap.summary_plot(shap_values, X_sample, show=True)
-    
+        plt.figure()
+        shap.summary_plot(shap_values, X_sample, show=False)
+        plt.savefig(plot_path, bbox_inches="tight")
+        plt.close()
+
     elif method == "FedXGBoost":
-        # TODO: plot feature importance
-        print(agg_model.feature_importance)
-        pass
-    
+        features = agg_model.feature_names_in_
+        feature_importance = agg_model.feature_importance
+
+        # Ensure all features are accounted for in feature importance
+        feature_importance = {
+            features[i]: feature_importance.get(i, 0) for i in range(len(features))
+        }
+
+        # Sort the features by importance
+        sorted_feature_importance = {
+            k: v for k, v in sorted(feature_importance.items(), key=lambda item: item[1], reverse=True)
+        }
+
+        # Prepare data for plotting
+        sorted_features = list(sorted_feature_importance.keys())[:20] # Top 20 features
+        sorted_values = list(sorted_feature_importance.values())[:20]
+
+        # Plot feature importance
+        plt.figure(figsize=(10, 6))
+        plt.barh(sorted_features, sorted_values, color='skyblue')
+        plt.xlabel('Feature Importance (Gain)')
+        plt.ylabel('Features')
+        plt.title('Feature Importance Plot')
+        plt.gca().invert_yaxis()  # Invert y-axis for better readability
+        plt.tight_layout()
+        plt.savefig(plot_path, bbox_inches="tight")
+        plt.close()
+
     else:
         raise ValueError("Invalid method")
 
-    return render_template("explain.html")
+    return render_template("explain.html", method=method)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Explanation</title>
+    <link rel="stylesheet" href="/static/css/explain.css">
+</head>
+<body>
+    <div class="container {{ 'large-plot' if method == 'FedXGBoost' else '' }}">
+        <h1>Feature Explanation</h1>
+        <div class="plot-container">
+            <img src="static/feature_importance.png" alt="Feature Importance Plot">
+        </div>
+        <a class="go-back" href="/">Go Back</a>
+    </div>
+</body>
+</html>
