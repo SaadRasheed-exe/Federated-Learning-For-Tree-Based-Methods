@@ -1,0 +1,74 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* Body Styling */
+body {
+    background: linear-gradient(135deg, #74ebd5, #acb6e5);
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    text-align: center;
+    overflow: hidden;
+}
+
+.container {
+    max-width: 90%;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.plot-container img {
+    width: 90%;
+    max-width: 600px;
+    height: auto;
+    margin: 10px auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px;
+    background: #fff;
+}
+
+/* Larger Plot for FedXGBoost */
+.container.large-plot .plot-container img {
+    width: 90%;
+    max-width: 1000px;
+    height: auto;
+}
+
+/* Go Back Button */
+a.go-back {
+    text-decoration: none;
+    background-color: #007BFF;
+    color: white;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    margin-top: 20px;
+    display: inline-block;
+}
+
+a.go-back:hover {
+    background-color: #0056b3;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+}

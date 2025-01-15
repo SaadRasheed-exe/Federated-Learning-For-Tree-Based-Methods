@@ -58,8 +58,16 @@ h1 {
     background-color: #f9f9f9;
 }
 
+/* Button Container Styling */
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px; /* Space between buttons */
+    margin-top: 20px;
+}
+
 /* Go Back Button */
-a.go-back {
+a.go-back, a.feature-explanation {
     text-decoration: none;
     background-color: #007BFF;
     color: white;
@@ -71,8 +79,10 @@ a.go-back {
     transition: all 0.3s ease;
 }
 
-a.go-back:hover {
+a.go-back:hover, a.feature-explanation:hover {
     background-color: #0056b3;
     transform: translateY(-3px);
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
 }
+
+
