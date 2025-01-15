@@ -109,7 +109,6 @@ def binary():
 def histograms():
     serialized = request.json['serialized']
     data = client.deserialize_message(bytes.fromhex(serialized))
-    # data = request.json
     feature_subset = data['feature_subset']
     compute_regions = data['compute_regions']
 
@@ -118,22 +117,22 @@ def histograms():
 
     serialized = client.serialize_message(histogram)
     return jsonify({'serialized': serialized.hex()})
-    # return jsonify(histogram)
 
 @fedxgb_blueprint.route('/set-lr', methods=['POST'])
 def set_lr():
     serialized = request.json['serialized']
     data = client.deserialize_message(bytes.fromhex(serialized))
     learning_rate = data['learning_rate']
-    client.set_learning_rate(learning_rate)
+    client.learning_rate = learning_rate
     return jsonify({'success': True})
 
 
 @fedxgb_blueprint.route('/set-base-y', methods=['POST'])
 def set_base_y():
     serialized = request.json['serialized']
-    base_y = client.deserialize_message(bytes.fromhex(serialized))
-    client.set_base_y(base_y['base_y'])
+    data = client.deserialize_message(bytes.fromhex(serialized))
+    base_y = data['base_y']
+    client.base_y = base_y
     return jsonify({'success': True})
 
 
@@ -141,7 +140,7 @@ def set_base_y():
 def set_estimators():
     data = request.json['data']
     estimators = data['estimators']
-    client.set_estimators(estimators)
+    client.estimators = estimators
     return jsonify({'success': True})
 
 
@@ -159,7 +158,7 @@ def add_estimator():
     serialized = request.json['serialized']
     data = client.deserialize_message(bytes.fromhex(serialized))
     estimator = XGBoostTree().from_dict(data['estimator'])
-    client.add_estimator(estimator)
+    client.estimators.append(estimator)
     return jsonify({'success': True})
 
 @fedxgb_blueprint.route('/evaluate', methods=['POST'])
