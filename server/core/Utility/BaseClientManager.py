@@ -4,32 +4,74 @@ import os, shutil
 import requests
 from typing import Dict, Any, Callable
 
-
 class BaseClientManager:
+    """
+    A class responsible for managing communication with multiple clients, enabling operations like sending data 
+    and uploading files to clients. This class supports concurrent communication using threads.
 
+    Attributes
+    ----------
+    CLIENT_PORT : int
+        The port on which clients are running.
+    clients : Dict[str, str]
+        A dictionary mapping client IDs to client URLs.
+    serializer : Serializer
+        A Serializer object for serializing and deserializing messages.
+    active_clients : list
+        A list of active client IDs.
+    client_data : dict
+        A dictionary to hold data related to clients.
+
+    Methods
+    -------
+    send_code_dir(code_dir: str, to: str = None):
+        Sends a directory containing code to a client or multiple clients.
+    """
+    
     CLIENT_PORT = 7223
 
     def __init__(self, clients: Dict, serializer: 'Serializer'):
         """
-        Initializes the ClientManager instance.
-        Args:
-            clients (dict): A dictionary with client IDs as keys and their base URLs as values.
-            serializer (Serializer): The serialization manager instance to handle serialization/deserialization.
+        Initializes the client manager with a list of clients and a serializer.
+
+        Parameters
+        ----------
+        clients : dict
+            A dictionary mapping client IDs to client URLs.
+        serializer : Serializer
+            A Serializer object for serializing and deserializing messages.
         """
         self.clients = clients  # {client_id: client_url}
         self.serializer = serializer
         self.active_clients = list(self.clients.keys())  # List of active clients
         self.client_data = {}
-    
+
     def _communicate(self, client_id: str, endpoint: str, data: Any = None, serialize: bool = True) -> Dict:
         """
-        Communicate with a client.
-        Args:
-            client_id (str): The ID of the client to send the request to.
-            endpoint (str): The API endpoint to send the request to.
-            data (any): The data to send with the request (optional).
-        Returns:
-            response (dict): The response from the client (if successful).
+        Sends data to a client and returns the response from the client.
+
+        Parameters
+        ----------
+        client_id : str
+            The ID of the client to communicate with.
+        endpoint : str
+            The endpoint on the client's server to send the data to.
+        data : any, optional
+            The data to send to the client.
+        serialize : bool, default=True
+            Whether to serialize the data before sending.
+
+        Returns
+        -------
+        dict
+            The response from the client.
+        
+        Raises
+        ------
+        ValueError
+            If the client ID is not found in the list of clients.
+        requests.exceptions.RequestException
+            If the request fails due to connection or status code issues.
         """
         url = 'https://' + self.clients.get(client_id) + f':{self.CLIENT_PORT}'
         if not url:
@@ -55,23 +97,32 @@ class BaseClientManager:
                 else:
                     return response.json()
             else:
-                # raise Exception(f"Failed to send request to {client_id}, Status Code: {response.status_code}")
                 response.raise_for_status()
         
         except requests.exceptions.RequestException as e:
             print(f"Request sent at {endpoint} failed for {client_id}: {str(e)}")
             self._handle_client_failure(client_id)
             return None
-    
+
     def _execute_in_threads(self, max_workers: int, func: Callable, *args, **kwargs) -> Dict[str, Any]:
         """
-        Executes a function concurrently for all active clients.
-        Args:
-            func (Callable): The function to execute.
-            *args: Positional arguments to pass to the function.
-            **kwargs: Keyword arguments to pass to the function.
-        Returns:
-            results (dict): A dictionary with client IDs as keys and function results as values.
+        Executes a function concurrently across multiple clients using threads.
+
+        Parameters
+        ----------
+        max_workers : int
+            The maximum number of workers (threads) to use for parallel execution.
+        func : Callable
+            The function to execute on each client.
+        *args : additional arguments
+            Arguments to pass to the function.
+        **kwargs : additional keyword arguments
+            Keyword arguments to pass to the function.
+
+        Returns
+        -------
+        dict
+            A dictionary mapping client IDs to their respective results.
         """
         results = {}
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -88,9 +139,32 @@ class BaseClientManager:
                     print(f"Error executing function for client {client_id}: {str(e)}")
                     self._handle_client_failure(client_id)
         return results
-    
-    # Function to upload a file to a specific subdirectory on the client
-    def _upload_to_client(self, client_id, path, their_subdir=''):
+
+    def _upload_to_client(self, client_id: str, path: str, their_subdir: str = '') -> requests.Response:
+        """
+        Uploads a file or folder to a specific subdirectory on the client.
+
+        Parameters
+        ----------
+        client_id : str
+            The ID of the client to upload the file to.
+        path : str
+            The path of the file or folder to upload.
+        their_subdir : str, default=''
+            The subdirectory on the client where the file should be uploaded.
+
+        Returns
+        -------
+        requests.Response
+            The response from the client's server.
+        
+        Raises
+        ------
+        FileNotFoundError
+            If the specified path does not exist.
+        ValueError
+            If the specified path is neither a file nor a folder.
+        """
         url = 'https://' + self.clients.get(client_id) + f':{self.CLIENT_PORT}'
         if not os.path.exists(path):
             raise FileNotFoundError(f"The specified path does not exist: {path}")
@@ -118,28 +192,30 @@ class BaseClientManager:
             os.remove(upload_path)
         
         return response
-    
+
     def _handle_client_failure(self, client_id: str):
         """
-        Handle client failure (remove from the active list).
-        Args:
-            client_id (str): The ID of the failed client.
+        Handles a client failure by removing the client from the active clients list.
+
+        Parameters
+        ----------
+        client_id : str
+            The ID of the failed client.
         """
         if client_id in self.active_clients:
             self.active_clients.remove(client_id)
             print(f"Client {client_id} has been removed from active clients.")
-    
-    def manage_active_clients(self):
-        """
-        Periodically check the status of active clients, remove any that have failed.
-        """
-        self._execute_in_threads(4, self._communicate, 'status', serialize=False)
-    
+
     def send_code_dir(self, code_dir: str, to: str = None):
         """
-        Send the code directory to all active clients.
-        Args:
-            code_dir (str): The path to the code directory.
+        Sends a directory containing code to a specific client or all active clients.
+
+        Parameters
+        ----------
+        code_dir : str
+            The path to the code directory to send.
+        to : str, optional
+            The specific client to send the code to. If not provided, sends to all active clients.
         """
         if to:
             self._upload_to_client(to, code_dir)

@@ -3,11 +3,21 @@ import numpy as np
 from ..Utility import BaseClientManager
 
 class FedXGBClientManager(BaseClientManager):
+    """
+    Manages communication and operations with clients in a federated XGBoost setup.
+    This class provides methods to fetch feature names, initialize clients, train models,
+    and aggregate results from clients in a federated learning framework.
+    """
+
     def fetch_feature_names(self):
         """
-        Fetch feature names from all active clients.
+        Fetches the feature names from all active clients in the federated system.
+
         Returns:
-            feature_names (list): A list of feature names from the clients.
+            List: A list of feature names if successfully retrieved from any client.
+
+        Raises:
+            Exception: If communication with a client fails.
         """
         for client_id in self.active_clients:
             response = self._communicate(client_id, 'fedxgb/get-feature-names', serialize=False)
@@ -18,21 +28,31 @@ class FedXGBClientManager(BaseClientManager):
 
     def init_clients(self, feature_names: list):
         """
-        Initialize communication with all active clients, exchanging public keys and preparing the system.
+        Initializes clients with the provided feature names.
+
+        Args:
+            feature_names (list): A list of feature names to initialize the clients with.
+
+        Raises:
+            Exception: If communication with any client fails during initialization.
         """
         data = {'ordering': feature_names}
         result = self._execute_in_threads(4, self._communicate, 'fedxgb/init', data)
         for client_id, response in result.items():
             if not response:
                 self._handle_client_failure(client_id)
-    
+
     def init_masks(self):
         """
-        Initialize the masks for all active clients.
+        Initializes masks for all active clients.
+
+        Raises:
+            Exception: If an error occurs during the initialization of masks or communication with a client.
         """
         initializer = [0]
         for client_id in self.active_clients:
             try:
+                # Construct the client list URL for communication.
                 client_list = [('https://' + url + f':{self.CLIENT_PORT}') for c, url in self.clients.items() if c in self.active_clients]
                 data = {
                     'initializer': initializer,
@@ -49,9 +69,16 @@ class FedXGBClientManager(BaseClientManager):
 
     def get_binary(self, num_features: int):
         """
-        Retrieve the binary data from all active clients.
+        Fetches binary data from the clients based on the specified number of features.
+
+        Args:
+            num_features (int): The number of features for which binary data is requested.
+
         Returns:
-            binary_data (dict): A dictionary of binary data from the clients.
+            dict: A dictionary where keys are feature indices and values are lists of binary values.
+
+        Raises:
+            Exception: If communication with any client fails.
         """
         binary_data = {i: set() for i in range(num_features)}
         result = self._execute_in_threads(1, self._communicate, 'fedxgb/binary')
@@ -65,9 +92,13 @@ class FedXGBClientManager(BaseClientManager):
 
     def set_feature_splits(self, feature_splits: Dict[int, List[int]]):
         """
-        Set the feature splits for all active clients.
+        Sets the feature splits for the federated system.
+
         Args:
-            feature_splits (dict): The feature splits to set.
+            feature_splits (Dict[int, List[int]]): A dictionary mapping feature indices to the corresponding splits.
+        
+        Raises:
+            Exception: If communication with any client fails during the process.
         """
         data = {'feature_splits': feature_splits}
         result = self._execute_in_threads(4, self._communicate, 'fedxgb/set-feature-splits', data)
@@ -77,9 +108,13 @@ class FedXGBClientManager(BaseClientManager):
 
     def get_y(self):
         """
-        Retrieve the binary data from all active clients.
+        Fetches the target variable information (number of ones and total number of samples) from the clients.
+
         Returns:
-            binary_data (dict): A dictionary of binary data from the clients.
+            tuple: A tuple containing the count of ones and the total number of samples.
+
+        Raises:
+            Exception: If communication with any client fails.
         """
         ones = 0
         n_samples = 0
@@ -95,9 +130,13 @@ class FedXGBClientManager(BaseClientManager):
     
     def get_quantiles(self):
         """
-        Retrieve the quantiles from all active clients.
+        Fetches quantile data for the features from the clients.
+
         Returns:
-            quantiles (dict): A dictionary of quantiles from the clients.
+            dict: A dictionary containing quantiles for each feature from the clients.
+
+        Raises:
+            Exception: If communication with any client fails.
         """
         quantiles = {}
         result = self._execute_in_threads(1, self._communicate, 'fedxgb/quantiles')
@@ -114,9 +153,13 @@ class FedXGBClientManager(BaseClientManager):
 
     def get_feature_importance(self):
         """
-        Retrieve the feature importance from all active clients.
+        Fetches the feature importance values from the clients.
+
         Returns:
-            feature_importance (dict): A dictionary of feature importance values from the clients.
+            dict: A dictionary containing feature importance values aggregated from all clients.
+
+        Raises:
+            Exception: If communication with any client fails.
         """
         feature_importance = {}
         result = self._execute_in_threads(4, self._communicate, 'fedxgb/feature-importance')
@@ -129,63 +172,84 @@ class FedXGBClientManager(BaseClientManager):
             else:
                 self._handle_client_failure(client_id)
         return {int(k): v for k, v in feature_importance.items()}
-    
+
     def set_base_y(self, base_y: int):
         """
-        Set the base y value for all active clients.
+        Sets the base value for the target variable on the clients.
+
         Args:
-            base_y (int): The base y value to set.
+            base_y (int): The base value for the target variable to be set on clients.
+        
+        Raises:
+            Exception: If communication with any client fails.
         """
         data = {'base_y': base_y}
         result = self._execute_in_threads(4, self._communicate, 'fedxgb/set-base-y', data)
         for client_id, response in result.items():
             if not response:
                 self._handle_client_failure(client_id)
-    
+
     def set_learning_rate(self, learning_rate: float):
         """
-        Set the learning rate for all active clients.
+        Sets the learning rate for the federated XGBoost model.
+
         Args:
-            learning_rate (float): The learning rate to set.
+            learning_rate (float): The learning rate to be set for the clients.
+
+        Raises:
+            Exception: If communication with any client fails.
         """
         data = {'learning_rate': learning_rate}
         result = self._execute_in_threads(4, self._communicate, 'fedxgb/set-lr', data)
         for client_id, response in result.items():
             if not response:
                 self._handle_client_failure(client_id)
-    
+
     def set_estimators(self, estimators: list):
         """
-        Set the number of estimators for all active clients.
+        Sets the list of estimators (models) for the federated XGBoost system.
+
         Args:
-            estimators (int): The number of estimators to set.
+            estimators (list): A list of estimators to be set on the clients.
+
+        Raises:
+            Exception: If communication with any client fails.
         """
         data = {'estimators': estimators}
         result = self._execute_in_threads(4, self._communicate, 'fedxgb/set-estimators', data, serialize=False)
         for client_id, response in result.items():
             if not response:
                 self._handle_client_failure(client_id)
-    
+
     def add_estimator(self, estimator: Any):
         """
-        Add an estimator to all active clients.
+        Adds an estimator (model) to the federated XGBoost system.
+
         Args:
-            estimator (int): The estimator to add.
+            estimator (Any): The estimator to be added to the system.
+
+        Raises:
+            Exception: If communication with any client fails.
         """
         data = {'estimator': estimator}
         result = self._execute_in_threads(4, self._communicate, 'fedxgb/add-estimator', data)
         for client_id, response in result.items():
             if not response:
                 self._handle_client_failure(client_id)
-    
+
     def get_histograms(self, feature_subset: List, compute_regions: bool):
         """
-        Retrieve the histogram from all active clients.
+        Fetches histograms for a subset of features from the clients.
+
         Args:
-            feature_splits (dict): The feature splits to use for histogram computation.
-            compute_regions (bool): Whether to compute regions.
+            feature_subset (List): A list of features for which histograms are requested.
+            compute_regions (bool): Whether to compute regions during histogram calculation.
+
         Returns:
-            histogram (dict): A dictionary of histograms from the clients.
+            dict: A dictionary of histograms aggregated across clients.
+
+        Raises:
+            Exception: If communication with any client fails.
         """
         histogram: Dict[str, Dict[str, float]] = {}
         data = {'feature_subset': feature_subset, 'compute_regions': compute_regions}
@@ -199,14 +263,19 @@ class FedXGBClientManager(BaseClientManager):
             else:
                 self._handle_client_failure(client_id)
 
+        # Aggregate histograms across clients.
         histogram = {k: np.sum(list(v.values()), axis=0) for k, v in histogram.items()}
         return histogram
-    
+
     def evaluate(self):
         """
-        Evaluate the model on all active clients.
+        Evaluates the performance of the federated XGBoost model across all clients.
+
         Returns:
-            evaluation (dict): A dictionary of evaluation results from the clients.
+            dict: A dictionary containing the evaluation results aggregated across clients.
+
+        Raises:
+            Exception: If communication with any client fails.
         """
         eval_results = {}
         result = self._execute_in_threads(4, self._communicate, 'fedxgb/evaluate')

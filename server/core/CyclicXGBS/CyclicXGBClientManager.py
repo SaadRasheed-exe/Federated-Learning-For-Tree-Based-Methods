@@ -1,42 +1,48 @@
 from ..Utility import BaseClientManager
-import pickle
 from xgboost import XGBClassifier
 
 class CyclicXGBClientManager(BaseClientManager):
-    
+    """
+    A class that manages client-side operations for training and evaluating XGBoost models
+    in a cyclic federated learning setup.
+    """
+
     def train_client(self, client_id, model: XGBClassifier, num_rounds: int) -> XGBClassifier:
         """
-        Train a single client using its local data.
+        Trains an XGBoost model on a specific client for a specified number of rounds.
+
         Args:
-            client_id (str): The ID of the client to train.
-            model (Any): The model to train.
+            client_id (str): The ID of the client where the model will be trained.
+            model (XGBClassifier): The XGBoost model to be trained.
+            num_rounds (int): The number of rounds for training the model.
+
         Returns:
-            model (Any): The updated model.
+            XGBClassifier: The updated XGBoost model after training.
         """
+        # Prepare data to send to the client for training.
         data = {'model': model, 'num_rounds': num_rounds}
+        
+        # Communicate with the client to perform the training.
         response = self._communicate(client_id, 'cyclic/train', data)
+        
+        # Extract the updated model from the response.
         updated_model = response.get('model')
         return updated_model
     
     def evaluate_client(self, client_id: str, model: XGBClassifier):
         """
-        Evaluate a single client using the provided model.
+        Evaluates an XGBoost model on a specific client and returns the evaluation scores.
+
         Args:
-            client_id (str): The ID of the client to evaluate.
-            model (Any): The model to evaluate.
+            client_id (str): The ID of the client where the model will be evaluated.
+            model (XGBClassifier): The XGBoost model to be evaluated.
+
         Returns:
-            scores (dict): A dictionary of evaluation scores.
+            dict: A dictionary containing evaluation scores for the model.
         """
+        # Prepare data to send to the client for evaluation.
         data = {'model': model}
+        
+        # Communicate with the client to perform the evaluation.
         scores = self._communicate(client_id, 'cyclic/evaluate', data)
         return scores
-    
-    def send_config(self, client_id, config):
-        """
-        Send the configuration to a client.
-        Args:
-            client_id (str): The ID of the client to send the configuration to.
-            config (ConfigParser): The configuration to send.
-        """
-        data = {'config': config}
-        self._communicate(client_id, 'cyclic/config', data)

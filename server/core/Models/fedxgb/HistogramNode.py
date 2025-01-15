@@ -3,17 +3,22 @@ from typing import Dict, List, Optional, Union
 
 class HistogramNode:
     """
-    A node object for constructing a regression tree using histograms of gradients and hessians.
-    
+    A class representing a node in a histogram-based decision tree. This tree is used for gradient boosting models
+    where nodes split based on feature values in order to minimize the loss function. The node uses histograms to
+    efficiently calculate gradients and hessians for tree construction.
+
     Attributes:
-        depth (int): The maximum depth of the tree.
-        feature_importance (Optional[Dict[str, float]]): A dictionary to store feature importance scores.
-    
+    - NEGATIVE_INFINITY (float): A constant representing negative infinity for initialization of scores.
+    - depth (int): The maximum depth of the node.
+    - feature_importance (Optional[Dict[str, float]]): The importance of each feature, updated during tree construction.
+
     Methods:
-        predict(x: np.ndarray) -> np.ndarray: Predicts the target values for input data.
-        to_dict() -> Dict: Converts the node and its children into a dictionary representation.
-        from_dict(node_dict: Dict): Reconstructs a node from a dictionary representation.
+    - is_leaf: Returns True if the current node is a leaf node (i.e., it does not split further).
+    - predict: Predicts the output for a set of input samples.
+    - to_dict: Converts the node into a dictionary representation for serialization.
+    - from_dict: Restores the node from a dictionary representation (useful for deserialization).
     """
+
     NEGATIVE_INFINITY = float('-inf')
 
     def __init__(
@@ -29,21 +34,18 @@ class HistogramNode:
         feature_importance: Optional[Dict[str, float]] = None,
     ):
         """
-        Initializes a HistogramNode.
+        Initializes a HistogramNode for use in a gradient boosting tree.
 
         Args:
-            node_dict (Optional[Dict]): A dictionary representation of a node (used for reconstruction).
-            histogram (Optional[Dict[str, np.ndarray]]): Histogram data containing gradients, hessians, and counts.
-            feature_splits (Optional[Dict[str, np.ndarray]]): Possible split points for each feature.
-            min_leaf (int): Minimum number of samples required for a node to be valid.
-            min_child_weight (float): Minimum sum of hessians required to allow a split.
-            depth (int): Maximum depth of the tree.
-            lambda_ (float): L2 regularization term on weights.
-            gamma (float): Minimum gain required to make a split.
-            feature_importance (Optional[Dict[str, float]]): Dictionary for tracking feature importance.
-
-        Raises:
-            ValueError: If the histogram is improperly formatted or missing required keys.
+        - node_dict (Optional[Dict], default: None): A dictionary to initialize the node (used for deserialization).
+        - histogram (Optional[Dict], default: None): A dictionary containing histograms of gradients, hessians, and counts.
+        - feature_splits (Optional[Dict], default: None): A dictionary containing possible splits for each feature.
+        - min_leaf (int, default: 5): The minimum number of samples required in a leaf node.
+        - min_child_weight (float, default: 1.0): The minimum sum of hessians for a child node.
+        - depth (int, default: 10): The maximum depth of the tree.
+        - lambda_ (float, default: 1.0): The L2 regularization parameter.
+        - gamma (float, default: 1.0): The pruning parameter.
+        - feature_importance (Optional[Dict[str, float]], default: None): A dictionary to store feature importance.
         """
         if node_dict is not None:
             self.from_dict(node_dict)
@@ -73,41 +75,31 @@ class HistogramNode:
         self._find_varsplit()
 
     def _compute_gamma(self) -> float:
-        """
-        Calculates the optimal leaf value using the sum of gradients and hessians.
-
-        Returns:
-            float: The optimal leaf value.
-        """
         total_gradient = np.sum(self._histogram.get('gradients', []))
         total_hessian = np.sum(self._histogram.get('hessians', []))
         return -total_gradient / (total_hessian + self._lambda)
 
     def _find_varsplit(self):
-        """
-        Identifies the best feature and split point for the current node.
-        Updates child nodes if a valid split is found.
-        """
         for feature_idx in range(len(self._feature_splits)):
             self._find_greedy_split(feature_idx)
 
         if self.is_leaf:
             return
 
-        # Update feature importance
+        # Update feature importance if provided
         if self.feature_importance is not None and self._var_idx is not None:
             self.feature_importance[self._var_idx] = (
                 self.feature_importance.get(self._var_idx, 0) + self._score
             )
 
-        # Split feature ranges
+        # Split feature ranges for child nodes
         lhs_splits = self._split_feature_ranges(self._feature_splits, self._var_idx, self._split_idx, left=True)
         rhs_splits = self._split_feature_ranges(self._feature_splits, self._var_idx, self._split_idx, left=False)
 
         # Set split value
         self._split_value = self._feature_splits[self._var_idx][self._split_idx]
 
-        # Recursive child creation
+        # Recursively create left and right child nodes
         self._left_child = HistogramNode(
             histogram=self._left_child_hist,
             feature_splits=lhs_splits,
@@ -130,12 +122,6 @@ class HistogramNode:
         )
 
     def _find_greedy_split(self, feature_idx: int):
-        """
-        Evaluates potential splits for a given feature and selects the one with the highest gain.
-
-        Args:
-            feature_idx (int): Index of the feature to evaluate.
-        """
         gradients = self._histogram.get('gradients', [])
         hessians = self._histogram.get('hessians', [])
         counts = self._histogram.get('counts', [])
@@ -173,38 +159,15 @@ class HistogramNode:
                 }
 
     def _compute_gain(self, lhs_gradient: float, lhs_hessian: float, rhs_gradient: float, rhs_hessian: float) -> float:
-        """
-        Computes the gain for a potential split based on the XGBoost formula.
-
-        Args:
-            lhs_gradient (float): Sum of gradients for the left child.
-            lhs_hessian (float): Sum of hessians for the left child.
-            rhs_gradient (float): Sum of gradients for the right child.
-            rhs_hessian (float): Sum of hessians for the right child.
-
-        Returns:
-            float: The computed gain for the split.
-        """
         gain = 0.5 * (
             (lhs_gradient ** 2 / (lhs_hessian + self._lambda)) +
-            (rhs_gradient ** 2 / (rhs_hessian + self._lambda)) -
+            (rhs_gradient ** 2 / (rhs_hessian + self._lambda)) - 
             ((lhs_gradient + rhs_gradient) ** 2 / (lhs_hessian + rhs_hessian + self._lambda))
         ) - self._gamma
         return gain
 
     @staticmethod
     def _split_feature(array: np.ndarray, axis: int, index: int) -> Union[np.ndarray, np.ndarray]:
-        """
-        Splits an array along a specified axis at the given index.
-
-        Args:
-            array (np.ndarray): The array to split.
-            axis (int): The axis along which to split.
-            index (int): The split index.
-
-        Returns:
-            Tuple[np.ndarray, np.ndarray]: The left and right splits of the array.
-        """
         split1 = array.take(indices=range(0, index), axis=axis)
         split2 = array.take(indices=range(index, array.shape[axis]), axis=axis)
         return split1, split2
@@ -219,36 +182,21 @@ class HistogramNode:
 
     @property
     def is_leaf(self) -> bool:
-        """
-        Determines if the current node is a leaf.
-
-        Returns:
-            bool: True if the node is a leaf, False otherwise.
-        """
         return self._score == self.NEGATIVE_INFINITY or self.depth <= 0
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         """
-        Predicts the target values for input data.
+        Predicts the output for a set of input samples.
 
         Args:
-            x (np.ndarray): Input data array.
+        - x (np.ndarray): The input samples to predict.
 
         Returns:
-            np.ndarray: Predicted target values.
+        - np.ndarray: The predicted values.
         """
         return np.array([self._predict_row(xi) for xi in x])
 
     def _predict_row(self, xi: np.ndarray) -> float:
-        """
-        Predicts the target value for a single data point.
-
-        Args:
-            xi (np.ndarray): A single data point.
-
-        Returns:
-            float: Predicted target value.
-        """
         if self.is_leaf:
             return self._val
 
@@ -257,10 +205,10 @@ class HistogramNode:
 
     def to_dict(self) -> Dict:
         """
-        Converts the node and its children into a dictionary representation.
+        Converts the current node to a dictionary representation.
 
         Returns:
-            Dict: A dictionary representation of the node.
+        - Dict: The dictionary representation of the node.
         """
         if self.is_leaf:
             return {'val': self._val, 'depth': self.depth, 'score': self._score}
@@ -275,6 +223,12 @@ class HistogramNode:
         }
 
     def from_dict(self, node_dict: Dict):
+        """
+        Restores the node from a dictionary representation.
+
+        Args:
+        - node_dict (Dict): The dictionary containing the serialized node data.
+        """
         if 'val' in node_dict:
             self._val = node_dict['val']
             self.depth = node_dict['depth']

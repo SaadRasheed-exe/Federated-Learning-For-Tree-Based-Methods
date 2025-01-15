@@ -9,7 +9,7 @@ class XGBoostTree:
 
     Attributes
     ----------
-    dtree : HistogramNode
+    dtree : Optional[HistogramNode]
         The root node of the decision tree.
 
     Methods
@@ -35,6 +35,9 @@ class XGBoostTree:
     """
     
     def __init__(self):
+        """
+        Initializes an empty tree structure with no root node.
+        """
         self.dtree: Optional[HistogramNode] = None
 
     def hist_fit(self, node_dict: Optional[Dict[str, Any]] = None, histogram: Optional[np.ndarray] = None, 
