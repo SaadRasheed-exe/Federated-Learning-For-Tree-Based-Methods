@@ -11,7 +11,11 @@ import matplotlib.pyplot as plt
 import threading
 import shap
 import warnings
+import matplotlib
+
+matplotlib.use('Agg')
 warnings.filterwarnings("ignore")
+
 
 app = Flask(__name__)
 server = None
@@ -197,8 +201,6 @@ def results():
     scores_html = scores_df.to_html(index=True, classes='table table-striped table-bordered', float_format='%.2f')
     progress = None
 
-    # return redirect("/explain")
-    # Render the results page
     return render_template(
         "results.html",
         table=scores_html
@@ -216,7 +218,7 @@ def explain():
     if method == "Aggregated Trees":
         shap_values = agg_model.shap_values(X_sample)
         plt.figure()
-        shap.summary_plot(shap_values, X_sample, show=False)  # Set show=False to prevent automatic display
+        shap.summary_plot(shap_values, X_sample, show=False, max_display=12)  # Set show=False to prevent automatic display
         plt.savefig(plot_path, bbox_inches="tight")
         plt.close()
 
@@ -224,7 +226,7 @@ def explain():
         explainer = shap.TreeExplainer(agg_model)
         shap_values = explainer.shap_values(X_sample)
         plt.figure()
-        shap.summary_plot(shap_values, X_sample, show=False)
+        shap.summary_plot(shap_values, X_sample, show=False, max_display=12)
         plt.savefig(plot_path, bbox_inches="tight")
         plt.close()
 
@@ -243,8 +245,8 @@ def explain():
         }
 
         # Prepare data for plotting
-        sorted_features = list(sorted_feature_importance.keys())[:20] # Top 20 features
-        sorted_values = list(sorted_feature_importance.values())[:20]
+        sorted_features = list(sorted_feature_importance.keys())[:12] # Top 12 features
+        sorted_values = list(sorted_feature_importance.values())[:12]
 
         # Plot feature importance
         plt.figure(figsize=(10, 6))
