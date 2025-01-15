@@ -104,25 +104,25 @@ class MajorityVotingEnsemble:
 
             weightages.append(self.model_weightage[_id])
             
-            if isinstance(model, (XGBClassifier, XGBRegressor)):
+            if isinstance(model, (XGBClassifier, DecisionTreeClassifier, RandomForestClassifier)):
                 explainer = shap.TreeExplainer(model)
-            elif isinstance(model, (LGBMClassifier, LGBMRegressor)):
+            elif isinstance(model, (LGBMClassifier)):
                 explainer = shap.TreeExplainer(model.booster_)
-            elif isinstance(model, (DecisionTreeClassifier, RandomForestClassifier)):
-                explainer = shap.TreeExplainer(model)
             else:
                 raise ValueError(f'{type(model)} models are not supported')
             
+            shap_values = explainer.shap_values(X)
+            if len(shap_values.shape) == 3:
+                shap_values = shap_values[:, :, 1]
+            
             if total_shap is not None:
-                if total_shap.shape != explainer.shap_values(X).shape:
+                if total_shap.shape != shap_values.shape:
                     raise ValueError('Shape mismatch in shap values')
-                shap_values = explainer.shap_values(X)
                 total_shap += np.array(shap_values) * self.model_weightage[_id]
             else:
-                shap_values = explainer.shap_values(X)
                 total_shap = np.array(shap_values) * self.model_weightage[_id]
         
         # weighted average of shap values
         total_shap /= sum(weightages)
-        return total_shap[:, :, 1]
+        return total_shap
         
