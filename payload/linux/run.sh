@@ -13,6 +13,11 @@ source pyenv/bin/activate
 # Install dependencies
 pyenv/bin/python -m pip install -r requirements.txt
 
+# Generate a self-signed certificate if it doesn't exist
+if [ ! -f "cert.pem" ]; then
+    openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/"
+fi
+
 # Run the Python application
 pyenv/bin/python api/app.py
 

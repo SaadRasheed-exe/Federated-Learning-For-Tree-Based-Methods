@@ -18,7 +18,7 @@ class MajorityVotingEnsemble:
     Attributes:
     - models (dict): A dictionary of models to be used in the ensemble.
     - model_weightage (dict): A dictionary of weightages associated with each model.
-    - _feature_names_in_ (list): List of feature names in the input data.
+    - feature_names_in_ (list): List of feature names in the input data.
 
     Methods:
     - __repr__: Returns a string representation of the ensemble.
