@@ -184,20 +184,20 @@ class BaseServer(ABC):
         """
         self.client_manager.send_code_dir(code_dir, to)
 
-    @abstractmethod
-    def fit(self):
-        """
-        Abstract method to fit a model or execute training.
+    # @abstractmethod
+    # def fit(self):
+    #     """
+    #     Abstract method to fit a model or execute training.
 
-        This method should be implemented by subclasses to provide the fitting logic.
-        """
-        pass
+    #     This method should be implemented by subclasses to provide the fitting logic.
+    #     """
+    #     pass
 
-    @abstractmethod
-    def evaluate(self):
-        """
-        Abstract method to evaluate a model.
+    # @abstractmethod
+    # def evaluate(self):
+    #     """
+    #     Abstract method to evaluate a model.
 
-        This method should be implemented by subclasses to provide the evaluation logic.
-        """
-        pass
+    #     This method should be implemented by subclasses to provide the evaluation logic.
+    #     """
+    #     pass
