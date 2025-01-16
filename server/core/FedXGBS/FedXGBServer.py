@@ -241,8 +241,6 @@ class FedXGBServer(BaseServer):
         f1 = 2 * (precision * recall) / (precision + recall)
         return {
             'accuracy': accuracy,
-            'precision': precision,
-            'recall': recall,
             'f1': f1
         }
 

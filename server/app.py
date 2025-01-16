@@ -1,24 +1,27 @@
 from flask import Flask, render_template, request, jsonify, redirect
 from core import FedXGBServer, AggregatedTreesServer, CyclicXGBServer
+from core.Utility import BaseServer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 import pandas as pd
 import os
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score
 import matplotlib.pyplot as plt
 import threading
 import shap
 import warnings
 import matplotlib
+import numpy as np
 
 matplotlib.use('Agg')
 warnings.filterwarnings("ignore")
-
+np.random.seed(42)
 
 app = Flask(__name__)
-server = None
+client_json_path = 'static/res/clients.json'
+server = BaseServer(client_json_path)
 disease = None
 method = None
 selected_states = None
@@ -34,6 +37,9 @@ DISEASE_MAPPING = {
     'Hypertension': 'Hypertension_I10'
 }
 
+CENTRALIZED_RESULTS = {'Diabetes': {'Train': {'Accuracy': 0.82, 'F1': 0.81}, 'Test': {'Accuracy': 0.80, 'F1': 0.78}}, 
+                       'Hypertension': {'Train': {'Accuracy': 0.77, 'F1': 0.78}, 'Test': {'Accuracy': 0.73, 'F1': 0.74}}}
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -44,24 +50,22 @@ def shortlist_clients():
     # Retrieve selected values from the form
     method = request.form.get("method")
     disease = request.form.get("disease")
-    client_json_path = 'static/res/clients.json'
+    
+    if not os.path.exists(f'static/res/{DISEASE_MAPPING[disease]}'):
+        raise FileNotFoundError(f"Directory not found: {DISEASE_MAPPING[disease]}")
+
+    server.send_code_dir(f'static/res/{DISEASE_MAPPING[disease]}/config.ini')
+    datastats = server.get_data_stats()
 
     if method == "Aggregated Trees":
         server = AggregatedTreesServer(client_json_path)
     elif method == "FedXGBoost":
-        if server is None or server.__class__.__name__ != "FedXGBServer":
-            server = FedXGBServer(client_json_path)
+        server = FedXGBServer(client_json_path)
     elif method == "Cyclic XGBoost":
         server = CyclicXGBServer(client_json_path)
     else:
         return "Invalid method selected", 400
     
-    if not os.path.exists(f'static/res/{DISEASE_MAPPING[disease]}'):
-        raise FileNotFoundError(f"Directory not found: {DISEASE_MAPPING[disease]}")
-    
-    server.send_code_dir(f'static/res/{DISEASE_MAPPING[disease]}/config.ini')
-    datastats = server.get_data_stats()
-
     # Pass selected values to the result page
     return render_template("shortlist_clients.html", datastats=datastats)
 
@@ -176,7 +180,7 @@ def training():
 
 @app.route("/results", methods=["GET", "POST"])
 def results():
-    global datastats, selected_states, method, train_scores, agg_model, progress, X_test, y_test
+    global datastats, selected_states, method, train_scores, agg_model, progress, X_test, y_test, disease
 
     testdata = pd.read_csv(f'static/res/{DISEASE_MAPPING[disease]}/testdata.csv')
     X_test = testdata.drop(columns=['is_diagnosed'])
@@ -193,17 +197,23 @@ def results():
     if agg_model:
         y_pred = agg_model.predict(X_test)
         test_scores['Accuracy'] = accuracy_score(y_test, y_pred)
-        test_scores['Precision'] = precision_score(y_test, y_pred)
-        test_scores['Recall'] = recall_score(y_test, y_pred)
         test_scores['F1'] = f1_score(y_test, y_pred)
     
     scores_df.loc['Test', :] = test_scores
+    scores_df = scores_df[['Accuracy', 'F1']]
     scores_html = scores_df.to_html(index=True, classes='table table-striped table-bordered', float_format='%.2f')
     progress = None
 
+    central_scores = CENTRALIZED_RESULTS[disease]
+    central_scores_df = pd.DataFrame(central_scores).T
+    central_scores_df.columns = [col.capitalize() for col in central_scores_df.columns]
+    central_scores_df.index = ['Train', 'Test']
+    central_scores_html = central_scores_df.to_html(index=True, classes='table table-striped table-bordered', float_format='%.2f')
+
     return render_template(
         "results.html",
-        table=scores_html
+        table=scores_html,
+        central_table=central_scores_html
     )
 
 

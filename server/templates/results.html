@@ -8,11 +8,18 @@
 </head>
 <body>
     <div class="container">
-        <h1>Training Results</h1>
-        <!-- Render the DataFrame table -->
+        <h1>Federated Results</h1>
+        <!-- Render the Training Results table -->
         <div class="table-container">
             {{ table|safe }}
         </div>
+        <!-- Title for the Centralized Results -->
+        <h2>Centralized Results</h2>
+        <!-- Render the Centralized Results table -->
+        <div class="table-container">
+            {{ central_table|safe }}
+        </div>
+        <!-- Buttons -->
         <div class="button-container">
             <a class="go-back" href="/">Go Back</a>
             <a class="feature-explanation" href="/explain">Feature Explanation</a>

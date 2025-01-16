@@ -86,3 +86,11 @@ a.go-back:hover, a.feature-explanation:hover {
 }
 
 
+/* Styling for Centralized Results title */
+h2 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-top: 20px; /* Add spacing above the title */
+    margin-bottom: 10px; /* Add spacing below the title */
+    text-align: center;
+}
