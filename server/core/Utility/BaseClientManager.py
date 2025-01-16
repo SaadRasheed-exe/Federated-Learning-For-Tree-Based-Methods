@@ -30,19 +30,17 @@ class BaseClientManager:
     
     CLIENT_PORT = 7223
 
-    def __init__(self, clients: Dict, serializer: 'Serializer'):
+    def __init__(self, clients: Dict):
         """
-        Initializes the client manager with a list of clients and a serializer.
+        Initializes the client manager with a list of clients.
 
         Parameters
         ----------
         clients : dict
             A dictionary mapping client IDs to client URLs.
-        serializer : Serializer
-            A Serializer object for serializing and deserializing messages.
         """
         self.clients = clients  # {client_id: client_url}
-        self.serializer = serializer
+        self.serializer = Serializer()
         self.active_clients = list(self.clients.keys())  # List of active clients
         self.client_data = {}
 

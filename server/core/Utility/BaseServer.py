@@ -1,10 +1,9 @@
 import requests
 import json
-from abc import ABC, abstractmethod
 from .Serializer import Serializer
 from .BaseClientManager import BaseClientManager
 
-class BaseServer(ABC):
+class BaseServer:
     """
     A base class representing a server that manages multiple clients. It provides functionality for retrieving
     client status, statistics, and sending code directories to clients. The server interacts with the clients using 
@@ -57,7 +56,7 @@ class BaseServer(ABC):
             self.clients[state] = ip
 
         self.serializer = Serializer()
-        self.client_manager = BaseClientManager(self.clients, self.serializer)
+        self.client_manager = BaseClientManager(self.clients)
     
     def _get_client_url(self, state: str = '', ip: str = '') -> str:
         """
@@ -183,21 +182,3 @@ class BaseServer(ABC):
             The client state to send the code to. If not provided, sends to all clients.
         """
         self.client_manager.send_code_dir(code_dir, to)
-
-    @abstractmethod
-    def fit(self):
-        """
-        Abstract method to fit a model or execute training.
-
-        This method should be implemented by subclasses to provide the fitting logic.
-        """
-        pass
-
-    @abstractmethod
-    def evaluate(self):
-        """
-        Abstract method to evaluate a model.
-
-        This method should be implemented by subclasses to provide the evaluation logic.
-        """
-        pass

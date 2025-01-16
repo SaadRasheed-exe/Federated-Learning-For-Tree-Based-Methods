@@ -21,10 +21,7 @@ class CyclicXGBServer(BaseServer):
         """
         super().__init__(clients_json_path)
         # Initialize the client manager for handling client-side operations.
-        self.client_manager = CyclicXGBClientManager(
-            self.clients,
-            self.serializer
-        )
+        self.client_manager = CyclicXGBClientManager(self.clients)
 
     def fit(self, model: XGBClassifier, weightage: Dict[str, int]) -> XGBClassifier:
         """

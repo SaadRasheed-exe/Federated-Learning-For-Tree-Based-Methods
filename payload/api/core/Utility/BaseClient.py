@@ -1,4 +1,5 @@
 from .Serializer import Serializer
+from ..Models import MajorityVotingEnsemble
 
 class BaseClient:
 

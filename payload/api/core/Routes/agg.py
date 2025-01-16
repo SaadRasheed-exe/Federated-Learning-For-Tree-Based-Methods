@@ -34,11 +34,9 @@ def get_feature_names():
 
 @agg_blueprint.route('/evaluate', methods=['POST'])
 def evaluate():
-    data = request.json['data']
-    serialized_model = data['model']
-
-    model_data = pickle.loads(bytes.fromhex(serialized_model))
-    model = MajorityVotingEnsemble(model_data['models'], model_data['model_weightage'])
+    serialized = request.json['serialized']
+    data = client.deserialize_message(bytes.fromhex(serialized))
+    model = data['model']
     tp, fp, fn, tn = client.evaluate(model)
 
     return jsonify({'tp': tp, 'fp': fp, 'fn': fn, 'tn': tn})

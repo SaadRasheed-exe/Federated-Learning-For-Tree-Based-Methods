@@ -69,11 +69,9 @@ class AggregatedTreesClientManager(BaseClientManager):
         Returns:
             dict: A dictionary of client IDs and their evaluation scores.
         """
-        # Serialize the model for transmission to clients.
-        serialized_model = pickle.dumps(model.serialize()).hex()
-        data = {'model': serialized_model}
+        data = {'model': model}
 
         # Execute evaluation in parallel across clients using threads.
-        scores = self._execute_in_threads(4, self._communicate, 'agg/evaluate', data, serialize=False)
+        scores = self._execute_in_threads(4, self._communicate, 'agg/evaluate', data)
         
         return scores

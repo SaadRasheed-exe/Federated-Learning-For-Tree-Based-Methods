@@ -31,7 +31,7 @@ class FedXGBServer(BaseServer):
             clients_json_path (str): Path to the JSON configuration containing client details.
         """
         super().__init__(clients_json_path)
-        self.client_manager = FedXGBClientManager(self.clients, self.serializer)
+        self.client_manager = FedXGBClientManager(self.clients)
 
         # Fetch feature names and initialize clients.
         self.features = self.client_manager.fetch_feature_names()

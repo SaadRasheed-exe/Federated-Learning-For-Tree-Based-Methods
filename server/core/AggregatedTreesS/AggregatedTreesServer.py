@@ -18,10 +18,7 @@ class AggregatedTreesServer(BaseServer):
             clients_json_path (str): Path to the JSON file containing client configuration.
         """
         super().__init__(clients_json_path)
-        self.client_manager = AggregatedTreesClientManager(
-            self.clients,
-            self.serializer
-        )
+        self.client_manager = AggregatedTreesClientManager(self.clients)
 
     def fit(
             self,
